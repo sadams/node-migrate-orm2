@@ -1,20 +1,23 @@
 var _     = require("lodash");
 
+//----- patch around node-migrate libs
+exports.migratePatch = require("./lib/migrate-patch")
+
 //----- Migration DSL functions
 exports.createTable = function(collectionName, options, connection, cb){
-  extractConfiguration.call(null, collectionName, options, connection, createCollection, cb)
+  fnWithConfiguration.call(null, createCollection, collectionName, options, connection,  cb)
 }
 
 exports.addColumn  = function(collectionName, options, connection, cb){
-  extractConfiguration.call(null, collectionName, options, connection, addColumnToCollection, cb)
+  fnWithConfiguration.call(null, addColumnToCollection, collectionName, options, connection,  cb)
 }
 
 exports.dropColumn = function(collectionName, options, connection, cb){
-  extractConfiguration.call(null, collectionName, options, connection, dropColumnFromCollection, cb)
+  fnWithConfiguration.call(null, dropColumnFromCollection, collectionName, options, connection, cb)
 }
 
 //----- utility functions below
-function extractConfiguration(collectionName, options, connection, fn, cb){
+function fnWithConfiguration(fn, collectionName, options, connection,  cb){
   var Dialect     = require("sql-ddl-sync/lib/Dialects/" + connection.dialect);
   var db          = connection.db;
 
@@ -95,7 +98,7 @@ var dropColumnFromCollection = function(collection, db, Dialect, cb){
 //    (renaming, altering data type, removing or adding constraints) with @dresende
 
 //exports.modifyColumn = function(collectionName, options, connection, cb){
-//  extractConfiguration.call(null, collectionName, options, connection, modifyColumnInCollection, cb)
+//  fnWithConfiguration.call(null, collectionName, options, connection, modifyColumnInCollection, cb)
 //}
 
 //var modifyColumnInCollection = function(collection, db, Dialect, cb){
