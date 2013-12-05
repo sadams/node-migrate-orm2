@@ -10,8 +10,8 @@
     "type": "git",
     "url": "git://github.com/nicholasf/node-migrate-orm2.git"
   },
+  "bin": { "orm2-migrate": "./bin/orm2-migrate" },
   "author": "",
-  "license": "BSD-2-Clause",
   "bugs": {
     "url": "https://github.com/nicholasf/node-migrate-orm2/issues"
   },

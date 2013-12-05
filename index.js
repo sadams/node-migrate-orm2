@@ -1,20 +1,38 @@
 var _     = require("lodash");
 
-//----- patch around node-migrate libs
-exports.migratePatch = require("./lib/migrate-patch")
-
 //----- Migration DSL functions
 exports.createTable = function(collectionName, options, connection, cb){
   fnWithConfiguration.call(null, createCollection, collectionName, options, connection,  cb)
 }
 
-exports.addColumn  = function(collectionName, options, connection, cb){
+exports.addColumn = function(collectionName, options, connection, cb){
   fnWithConfiguration.call(null, addColumnToCollection, collectionName, options, connection,  cb)
 }
 
 exports.dropColumn = function(collectionName, options, connection, cb){
   fnWithConfiguration.call(null, dropColumnFromCollection, collectionName, options, connection, cb)
 }
+
+exports.dropTable = function(collectionName, connection, cb){
+  var Dialect     = require("sql-ddl-sync/lib/Dialects/" + connection.dialect);
+  var db          = connection.db;
+
+  collection = {
+    name:       collectionName
+  }
+
+  Dialect.dropCollection(db, collection.name, cb);
+}
+
+var dsl = {
+  createTable:    exports.createTable,
+  dropTable:      exports.dropTable,
+  addColumn:      exports.addColumn,
+  dropColumn:     exports.dropColumn
+}
+
+//----- patch around node-migrate libs
+exports.migratePatch = require("./lib/migrate-patch")(dsl)
 
 //----- utility functions below
 function fnWithConfiguration(fn, collectionName, options, connection,  cb){
@@ -27,17 +45,6 @@ function fnWithConfiguration(fn, collectionName, options, connection,  cb){
   }
 
   fn(collection, db, Dialect, cb)
-}
-
-exports.dropTable = function(collectionName, connection, cb){
-  var Dialect     = require("sql-ddl-sync/lib/Dialects/" + connection.dialect);
-  var db          = connection.db;
-
-  collection = {
-    name:       collectionName
-  }
-
-  Dialect.dropCollection(db, collection.name, cb);
 }
 
 //abstracted and altered from sql-ddl-sync Sync closure

@@ -1,11 +1,9 @@
-var createTable = require('./../..').createTable;
-var dropTable = require('./../..').dropTable;
 var mysql       = require('mysql');
 var db          = mysql.createConnection("mysql://root:@localhost/test");
 var connection = {dialect: 'mysql', db: db}
 
 exports.up = function(next){
-  createTable('test_table2', {
+  this.createTable('test_table2', {
     id     : { type : "number", primary: true, serial: true },
     int2   : { type : "number", size: 2 },
     int4   : { type : "number", size: 4 },
@@ -16,5 +14,5 @@ exports.up = function(next){
 };
 
 exports.down = function(next){
-  dropTable('test_table2', connection, next);
+  this.dropTable('test_table2', connection, next);
 };
