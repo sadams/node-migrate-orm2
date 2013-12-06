@@ -6,7 +6,11 @@
  * Module dependencies.
  */
 
-var migrate = require('../').migratePatch
+var mysql       = require('mysql');
+var db          = mysql.createConnection("mysql://root:@localhost/test");
+var connection = {dialect: 'mysql', db: db}
+
+var migrate = require('../')(connection)
   , join = require('path').join
   , fs = require('fs');
 
