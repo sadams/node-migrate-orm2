@@ -1,44 +1,5 @@
 var _     = require("lodash");
 
-//----- utility functions below
-function getConfiguration(collectionName, options, connection){
-  var Dialect     = require("sql-ddl-sync/lib/Dialects/" + connection.dialect);
-  var db          = connection.db;
-
-  collection = {
-    name:       collectionName,
-    properties: options
-  }
-
-  fn(collection, db, Dialect, cb)
-}
-
-//abstracted and altered from sql-ddl-sync Sync closure
-var createCollection = function(collection, db, Dialect, cb) {
-  var columns = [];
-  var primary = [];
-
-  for (var k in collection.properties) {
-    var col = createColumn(collection.name, k, collection.properties[k], Dialect);
-
-    if (col === false) {
-      return cb(new Error("Unknown type for property '" + k + "'"));
-    }
-
-    if (collection.properties[k].primary) {
-      primary.push(k);
-    }
-
-    columns.push(col.value);
-  }
-
-  if (typeof Dialect.checkPrimary == "function") {
-    primary = Dialect.checkPrimary(primary);
-  }
-
-  Dialect.createCollection(db, collection.name, columns, primary, cb);
-}
-
 //abstracted from Sync closure
 var createColumn = function (collection, name, property, Dialect) {
   var type =  Dialect.getType(collection, name, property);
@@ -56,47 +17,53 @@ var createColumn = function (collection, name, property, Dialect) {
   };
 };
 
-var addColumnToCollection = function(collection, db, Dialect, cb){
-  columnName = _.keys(collection.properties)[0]
-  column = createColumn(collection.name, columnName, collection.properties[columnName], Dialect);
-  Dialect.addCollectionColumn(db, collection.name, column.value, null, cb);
-};
-
-var dropColumnFromCollection = function(collection, db, Dialect, cb){
-  columnName = collection.properties
-  Dialect.dropCollectionColumn(db, collection.name, columnName, cb);
-};
-
 
 function MigrationDSL(connection) {
-  this.config = {
-    connection: connection,
-    Dialect:    require("sql-ddl-sync/lib/Dialects/" + connection.dialect),
-    db:         connection.db,
-
-    collection: {
-      name:       collectionName,
-      properties: options
-    }
-  }
+  this.connection = connection;
+  this.Dialect =    require("sql-ddl-sync/lib/Dialects/" + connection.dialect);
+  this.db =         connection.db;
 }
 
 MigrationDSL.prototype = {
   //----- Migration DSL functions
+  //abstracted and altered from sql-ddl-sync Sync closure
   createTable: function(collectionName, options, cb){
-    createCollection(this.config, cb)
+    var columns = [];
+    var primary = [];
+
+    for (var k in options) {
+      var col = createColumn(collectionName, k, options[k], this.Dialect);
+
+      if (col === false) {
+        return cb(new Error("Unknown type for property '" + k + "'"));
+      }
+
+      if (options[k].primary) {
+        primary.push(k);
+      }
+
+      columns.push(col.value);
+    }
+
+    if (typeof this.Dialect.checkPrimary == "function") {
+      primary = this.Dialect.checkPrimary(primary);
+    }
+
+    this.Dialect.createCollection(this.db, collectionName, columns, primary, cb);
   }
 
   , addColumn: function(collectionName, options, cb){
-      addColumnToCollection(this.config, cb)
+    var columnName = _.keys(options)[0]
+    var column = createColumn(collectionName, columnName, options[columnName], this.Dialect);
+    this.Dialect.addCollectionColumn(this.db, collectionName, column.value, null, cb);
   }
 
-  , dropColumn: function(collectionName, options, cb){
-    dropColumnFromCollection(this.config, cb)
+  , dropColumn: function(collectionName, columnName, cb){
+    this.Dialect.dropCollectionColumn(this.db, collectionName, columnName, cb);
   }
 
   , dropTable: function(collectionName, cb){
-    Dialect.dropCollection(db, this.config.collection.name, cb);
+    this.Dialect.dropCollection(this.db, collectionName, cb);
   }
 }
 
