@@ -2,14 +2,10 @@
 
 //this file has been copied from https://github.com/visionmedia/node-migrate/blob/master/bin/migrate
 
+var csPresent = false;
 /**
  * Module dependencies.
  */
-
-var mysql       = require('mysql');
-var db          = mysql.createConnection("mysql://root:@localhost/test");
-var connection = {dialect: 'mysql', db: db}
-
 var migrate = require('../')(connection)
   , join = require('path').join
   , fs = require('fs');

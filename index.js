@@ -1,6 +1,6 @@
 var _     = require("lodash");
 
-//abstracted from Sync closure
+//duplicated from sql-ddl-sync Sync closure
 var createColumn = function (collection, name, property, Dialect) {
   var type =  Dialect.getType(collection, name, property);
 
@@ -26,7 +26,7 @@ function MigrationDSL(connection) {
 
 MigrationDSL.prototype = {
   //----- Migration DSL functions
-  //abstracted and altered from sql-ddl-sync Sync closure
+  //duplicated and altered from sql-ddl-sync Sync closure
   createTable: function(collectionName, options, cb){
     var columns = [];
     var primary = [];
