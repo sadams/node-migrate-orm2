@@ -3,9 +3,6 @@
   "version": "0.0.0",
   "description": "A library providing migrations using ORM2's model DSL leveraging Visionmedia's node-migrate.",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "repository": {
     "type": "git",
     "url": "git://github.com/nicholasf/node-migrate-orm2.git"
