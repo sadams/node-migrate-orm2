@@ -1,87 +1,178 @@
-var _     = require("lodash");
-
-//duplicated from sql-ddl-sync Sync closure
-var createColumn = function (collection, name, property, Dialect) {
-  var type =  Dialect.getType(collection, name, property);
-
-  if (type === false) {
-    return false;
-  }
-  if (typeof type == "string") {
-    type = { value : type };
-  }
-
-  return {
-    value  : Dialect.escapeId(name) + " " + type.value,
-    before : type.before
-  };
-};
+var join = require('path').join
+  , fs = require('fs');
 
 
-function MigrationDSL(connection) {
+function MigrationTask(connection, dir){
   this.connection = connection;
-  this.Dialect =    require("sql-ddl-sync/lib/Dialects/" + connection.dialect);
-  this.db =         connection.db;
+  this.dir = (dir || 'migrations');
+  this.migrate = require('./lib/migration-dsl')(connection);
 }
 
-MigrationDSL.prototype = {
-  //----- Migration DSL functions
-  //duplicated and altered from sql-ddl-sync Sync closure
-  createTable: function(collectionName, options, cb){
-    var columns = [];
-    var primary = [];
-
-    for (var k in options) {
-      var col = createColumn(collectionName, k, options[k], this.Dialect);
-
-      if (col === false) {
-        return cb(new Error("Unknown type for property '" + k + "'"));
-      }
-
-      if (options[k].primary) {
-        primary.push(k);
-      }
-
-      columns.push(col.value);
-    }
-
-    if (typeof this.Dialect.checkPrimary == "function") {
-      primary = this.Dialect.checkPrimary(primary);
-    }
-
-    this.Dialect.createCollection(this.db, collectionName, columns, primary, cb);
-  }
-
-  , addColumn: function(collectionName, options, cb){
-    var columnName = _.keys(options)[0]
-    var column = createColumn(collectionName, columnName, options[columnName], this.Dialect);
-    this.Dialect.addCollectionColumn(this.db, collectionName, column.value, null, cb);
-  }
-
-  , dropColumn: function(collectionName, columnName, cb){
-    this.Dialect.dropCollectionColumn(this.db, collectionName, columnName, cb);
-  }
-
-  , dropTable: function(collectionName, cb){
-    this.Dialect.dropCollection(this.db, collectionName, cb);
-  }
+MigrationTask.prototype.run = function(done) {
+  var self = this;
+  fs.mkdir(this.dir, 0774, function (err) {
+    self.createMigrationsTable(function (err) {
+      done(null);
+    })
+  });
 }
 
-//----- patch around node-migrate libs
-module.exports = function(connection){
-  var dsl = new MigrationDSL(connection)
-  return require("./lib/migrate-patch")(dsl)
+/**
+ * Load migrations.
+ */
+
+MigrationTask.prototype.migrations = function() {
+  return fs.readdirSync(this.dir).filter(function(file){
+    return file.match(/^\d+.*\.js$/);
+  }).sort().map(function(file){
+      return 'migrations/' + file;
+    });
 }
 
-//---- WIP below. Need to discuss how to handle column modifications
-//    (renaming, altering data type, removing or adding constraints) with @dresende
+/**
+ * Log a keyed message.
+ */
 
-//exports.modifyColumn = function(collectionName, options, connection, cb){
-//  fnWithConfiguration.call(null, collectionName, options, connection, modifyColumnInCollection, cb)
+function log(key, msg) {
+  console.log('  \033[90m%s :\033[0m \033[36m%s\033[0m', key, msg);
+}
+
+/**
+ * Slugify the given `str`.
+ */
+
+function slugify(str) {
+  return str.replace(/\s+/g, '-');
+}
+
+/**
+ * Pad the given number.
+ *
+ * @param {Number} n
+ * @return {String}
+ */
+
+function pad(n) {
+  return Array(4 - n.toString().length).join('0') + n;
+}
+
+var template = [
+  ''
+  , 'exports.up = function(next){'
+  , '  next();'
+  , '};'
+  , ''
+  , 'exports.down = function(next){'
+  , '  next();'
+  , '};'
+  , ''
+].join('\n');
+
+var migrationsTableSQL = "CREATE table ORM2_MIGRATIONS(migration varchar(255), direction varchar(5), created_at datetime);"
+
+var orm2Migrations = {
+  migration  : { type : "text", required: true },
+  direction  : { type : "text", required: true },
+  created_at : { type : "date", required: true }
+}
+
+MigrationTask.prototype.createMigrationsTable = function (cb) {
+  var dsl = this.migrate.dsl;
+  var self = this;
+  dsl.createTable('ORM2_MIGRATIONS', orm2Migrations, cb);
+}
+
+//MigrationTask.prototype.record = function(migration, direction, cb) {
+//  var sqlStr = "INSERT into ORM2_MIGRATIONS(migration, direction, created_at) VALUES(" + migration;
+//  sqlStr     += ", " + direction;
+//  sqlStr     += ", " + new Date();
+//
+//  this.connection.query(sqlStr, cb)
 //}
 
-//var modifyColumnInCollection = function(collection, db, Dialect, cb){
-//  columnName = collection.properties.name
-//  columnDefinition = createColumn(collection.name, columnName, collection.properties.modification, Dialect);
-//  Dialect.modifyCollectionColumn(db, collection.name, columnName, columnDefinition.value, cb);
-//};
+/**
+ * Create a migration with the given `name`.
+ *
+ * @param {String} name
+ */
+
+function generate(name) {
+  var path = name + '.js';
+  log('create', join(this.process.cwd(), path));
+  fs.writeFileSync(path, template);
+}
+
+/**
+ * Perform a migration in the given `direction`.
+ *
+ * @param {Number} direction
+ */
+
+MigrationTask.prototype.performMigration = function(direction, migrationName, cb) {
+  this.migrate(this.dir + '/.migrate');
+  self = this;
+  this.migrations().forEach(function(path){
+    var mod = require(process.cwd() + '/' + path);
+    self.migrate(path, mod.up, mod.down);
+  });
+
+  var set = this.migrate();
+
+  set.on('migration', function(migration, direction){
+    log(direction, migration.title);
+//    record(direction, migration.title, cb);
+  });
+
+  set.on('save', function(){
+    log('migration', 'complete');
+    process.exit();
+  });
+
+  var migrationPath = migrationName
+    ? join('migrations', migrationName)
+    : migrationName;
+
+  set[direction](null, migrationPath);
+  cb();
+}
+
+/**
+ * up [name]
+ */
+
+MigrationTask.prototype.up = function(migrationName, cb){
+  this.performMigration('up', migrationName, cb);
+}
+
+/**
+ * down [name]
+ */
+
+MigrationTask.prototype.down =  function(migrationName, cb){
+  performMigration('down', migrationName, cb);
+}
+
+/**
+ * create [title]
+ */
+
+MigrationTask.prototype.generate = function(title, cb){
+  self = this;
+  this.run(function(){
+    var migrations = fs.readdirSync(self.dir).filter(function(file){
+      return file.match(/^\d+/);
+    }).map(function(file){
+        return parseInt(file.match(/^(\d+)/)[1], 10);
+      }).sort(function(a, b){
+        return a - b;
+      });
+
+    var curr = pad((migrations.pop() || 0) + 1);
+    title = title ? curr + '-' + title : curr;
+    generate(self.dir + '/' + title);
+    cb(null, title);
+  })
+}
+
+module.exports = MigrationTask;
+

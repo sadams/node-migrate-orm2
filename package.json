@@ -7,7 +7,9 @@
     "type": "git",
     "url": "git://github.com/nicholasf/node-migrate-orm2.git"
   },
-  "bin": { "orm2-migrate": "./bin/orm2-migrate" },
+  "bin": {
+    "orm2-migrate": "./bin/orm2-migrate"
+  },
   "author": "",
   "bugs": {
     "url": "https://github.com/nicholasf/node-migrate-orm2/issues"
@@ -19,6 +21,10 @@
     "lodash": "~2.4.1"
   },
   "devDependencies": {
-    "mysql": "~2.0.0-rc1"
+    "mysql": "~2.0.0-rc1",
+    "should": "~2.1.1",
+    "mocha": "~1.15.1",
+    "sqlite3": "~2.1.19",
+    "rimraf": "~2.2.5"
   }
 }
