@@ -15,7 +15,6 @@ var conn = getConnection();
 
 var cleanup = function(folder, cb){
   rimraf(join(this.process.cwd() ,folder), function(err, result){
-    console.log(err)
     conn.db.all('drop table ORM2_MIGRATIONS', cb)
   })
 }
@@ -33,66 +32,65 @@ describe('node-migrate-orm2', function(done){
     })
   })
 
-//  describe('#run', function(done){
-//    it('creates the default migrations folder', function(done){
-//      task.run(
-//        function(err, result){
-//          should.not.exist(err);
-//          fs.exists('migrations', function(exists){
-//            exists.should.be.ok;
-//            done();
-//          })
-//        }
-//      );
-//    });
-//
-//    it('creates the migrations folder with the second argument', function(done){
-//      cleanup('migrations', function(err, result){
-//        var task = new Task(conn, 'db');
-//        task.run(
-//          function(err, result){
-//            should.not.exist(err);
-//            fs.exists('db', function(exists){
-//              exists.should.be.ok;
-//              cleanup('db', done);
-//            })
-//          }
-//        );
-//      })
-//    });
-//
-//    it('creates the ORM2_MIGRATIONS table', function(done){
-//      task.run(
-//        function(err, result){
-//          should.not.exist(err);
-//          conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
-//            should.not.exist(err);
-//            done();
-//          });
-//        }
-//      );
-//    });
-//  });
-//
-//  describe('#generate', function(done){
-//    it('generates a migration', function(done){
-//      task.generate('test1', function(err, filename){
-//        fs.exists('migrations/' + filename + '.js', function(exists){
-//          exists.should.be.ok;
-//          done()
-//        });
-//      });
-//    });
-//  })
+  describe('#run', function(done){
+    it('creates the default migrations folder', function(done){
+      task.run(
+        function(err, result){
+          should.not.exist(err);
+          fs.exists('migrations', function(exists){
+            exists.should.be.ok;
+            done();
+          })
+        }
+      );
+    });
+
+    it('creates the migrations folder with the second argument', function(done){
+      cleanup('migrations', function(err, result){
+        var task = new Task(conn, 'db');
+        task.run(
+          function(err, result){
+            should.not.exist(err);
+            fs.exists('db', function(exists){
+              exists.should.be.ok;
+              cleanup('db', done);
+            })
+          }
+        );
+      })
+    });
+
+    it('creates the ORM2_MIGRATIONS table', function(done){
+      task.run(
+        function(err, result){
+          should.not.exist(err);
+          conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
+            should.not.exist(err);
+            done();
+          });
+        }
+      );
+    });
+  });
+
+  describe('#generate', function(done){
+    it('generates a migration', function(done){
+      task.generate('test1', function(err, filename){
+        fs.exists('migrations/' + filename + '.js', function(exists){
+          exists.should.be.ok;
+          done()
+        });
+      });
+    });
+  })
 
   describe('#up', function(done){
     it('runs all up migrations successfully', function(done){
       task.run(function(err, result){
         fs.writeFile('migrations/001-create-table1.js', table1Migration, function(err, result){
           task.up('', function(err, result){
-            console.log('back from running up', arguments);
             conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
-              console.log(arguments, " <<<< query result");
+              result[0]['count(*)'].should.eql(1)
               done();
             })
           })

@@ -1,11 +1,13 @@
-var join = require('path').join
-  , fs = require('fs');
+var join  = require('path').join
+  , fs    = require('fs')
+  , async = require('async');
 
 
 function MigrationTask(connection, dir){
   this.connection = connection;
   this.dir = (dir || 'migrations');
   this.migrate = require('./lib/migration-dsl')(connection);
+  this.writeQueue = [];
 }
 
 MigrationTask.prototype.run = function(done) {
@@ -82,13 +84,24 @@ MigrationTask.prototype.createMigrationsTable = function (cb) {
   dsl.createTable('ORM2_MIGRATIONS', orm2Migrations, cb);
 }
 
-//MigrationTask.prototype.record = function(migration, direction, cb) {
-//  var sqlStr = "INSERT into ORM2_MIGRATIONS(migration, direction, created_at) VALUES(" + migration;
-//  sqlStr     += ", " + direction;
-//  sqlStr     += ", " + new Date();
-//
-//  this.connection.query(sqlStr, cb)
-//}
+record = function(item, cb) {
+  var connection = item.connection;
+  var migration = item.migration;
+  var direction = item.direction;
+
+  var sqlStr = "INSERT into ORM2_MIGRATIONS(migration, direction, created_at) VALUES('" + migration + "'";
+  sqlStr     += ", '" + direction + "'";
+  sqlStr     += ", '" + new Date() + "')";
+
+  //a hack until we can call a dialects module for orm2
+  switch (connection.dialect) {
+    case 'sqlite':
+      connection.db.all(sqlStr, cb)
+      break;
+    default:
+      connection.db.query(sqlStr, cb)
+  }
+}
 
 /**
  * Create a migration with the given `name`.
@@ -117,15 +130,19 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
   });
 
   var set = this.migrate();
+  self = this;
 
   set.on('migration', function(migration, direction){
     log(direction, migration.title);
-//    record(direction, migration.title, cb);
+    self.writeQueue.push({direction: direction, migration: migration.name, connection: self.connection})
   });
+
 
   set.on('save', function(){
     log('migration', 'complete');
-    process.exit();
+    async.eachSeries(self.writeQueue, record, function(err){
+      cb(err);
+    })
   });
 
   var migrationPath = migrationName
@@ -133,7 +150,6 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
     : migrationName;
 
   set[direction](null, migrationPath);
-  cb();
 }
 
 /**
