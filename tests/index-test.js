@@ -85,18 +85,35 @@ describe('node-migrate-orm2', function(done){
   })
 
   describe('#up', function(done){
-    it('runs all up migrations successfully', function(done){
+    afterEach(function(done){
+      conn.db.all('drop table table1;', done)
+    });
+
+    it('runs a no arg up migrations successfully', function(done){
       task.run(function(err, result){
         fs.writeFile('migrations/001-create-table1.js', table1Migration, function(err, result){
           task.up('', function(err, result){
             conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
               result[0]['count(*)'].should.eql(1)
               done();
-            })
+            });
           })
         })
       })
     })
+
+    it('runs a specific up migration successfully', function(done){
+      task.run(function(err, result){
+        fs.writeFile('migrations/001-create-table1.js', table1Migration, function(err, result){
+          task.up('001-create-table1.js', function(err, result){
+            conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
+              result[0]['count(*)'].should.eql(1)
+              done();
+            });
+          })
+        })
+      })
+    });
   })
 })
 

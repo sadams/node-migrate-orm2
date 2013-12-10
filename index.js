@@ -137,7 +137,6 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
     self.writeQueue.push({direction: direction, migration: migration.name, connection: self.connection})
   });
 
-
   set.on('save', function(){
     log('migration', 'complete');
     async.eachSeries(self.writeQueue, record, function(err){
