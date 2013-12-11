@@ -89,6 +89,8 @@ record = function(item, cb) {
   var migration = item.migration;
   var direction = item.direction;
 
+  migration = migration.split('/')[1]; //remove reference to MigrationTask.dir
+
   var sqlStr = "INSERT into ORM2_MIGRATIONS(migration, direction, created_at) VALUES('" + migration + "'";
   sqlStr     += ", '" + direction + "'";
   sqlStr     += ", '" + new Date() + "')";
@@ -134,12 +136,13 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
 
   set.on('migration', function(migration, direction){
     log(direction, migration.title);
-    self.writeQueue.push({direction: direction, migration: migration.name, connection: self.connection})
+    self.writeQueue.push({direction: direction, migration: migration.title, connection: self.connection})
   });
 
   set.on('save', function(){
     log('migration', 'complete');
     async.eachSeries(self.writeQueue, record, function(err){
+      self.writeQueue = [];
       cb(err);
     })
   });
@@ -164,7 +167,7 @@ MigrationTask.prototype.up = function(migrationName, cb){
  */
 
 MigrationTask.prototype.down =  function(migrationName, cb){
-  performMigration('down', migrationName, cb);
+  this.performMigration('down', migrationName, cb);
 }
 
 /**

@@ -4,14 +4,15 @@ var should  = require('should')
   , join    = require('path').join
   , rimraf  = require('rimraf');
 
+var task;
+var conn;
+
 var getConnection = function(){
   var sqlite3     = require('sqlite3');
   var db = new sqlite3.Database(':memory:');
   var connection = {dialect: 'sqlite', db: db}
   return connection;
 }
-
-var conn = getConnection();
 
 var cleanup = function(folder, cb){
   rimraf(join(this.process.cwd() ,folder), function(err, result){
@@ -20,9 +21,8 @@ var cleanup = function(folder, cb){
 }
 
 describe('node-migrate-orm2', function(done){
-  var task;
-
   beforeEach(function(){
+    conn = getConnection();
     task = new Task(conn);
   })
 
@@ -100,7 +100,7 @@ describe('node-migrate-orm2', function(done){
           })
         })
       })
-    })
+    });
 
     it('runs a specific up migration successfully', function(done){
       task.run(function(err, result){
@@ -115,7 +115,39 @@ describe('node-migrate-orm2', function(done){
       })
     });
   })
-})
+
+  describe('#down', function(done){
+    it('runs a no arg down migrations successfully', function(done){
+      down = function(err, cb){
+        task.down('', function(err, result){
+          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            result.length.should.eql(2);
+            conn.db.all('PRAGMA table_info(table1)', function(err, result){
+              result.length.should.eql(0);
+              cb();
+            });
+          })
+        })
+      }
+
+      task.run(function(err, result){
+        fs.writeFile('migrations/001-create-table1.js', table1Migration, function(err, result){
+          task.up('', function(err, result){
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              result.length.should.eql(1);
+              result[0].direction.should.eql('up');
+              conn.db.all('PRAGMA table_info(table1)', function(err, result){
+                result.length.should.eql(2);
+                down(null, done);
+              })
+            });
+          })
+        })
+      })
+    });
+  });
+});
+
 
 var table1Migration = "exports.up = function (next) {         \n\
 this.createTable('table1', {                                  \n\
@@ -128,3 +160,18 @@ exports.down = function (next){                               \n\
   this.dropTable('table1', next);                             \n\
 };                                                            \n\
 "
+
+var table2Migration = "\exports.up = function(next){          \n\
+this.createTable('test_table2', {                             \n\
+  id     : { type : \"number\", primary: true, serial: true },\n\
+  int2   : { type : \"number\", size: 2 },                    \n\
+  int4   : { type : \"number\", size: 4 },                    \n\
+  int8   : { type : \"number\", size: 8 },                    \n\
+  float4 : { type : \"number\", rational: true, size: 4 },    \n\
+  float8 : { type : \"number\", rational: true, size: 8 }     \n\
+}, next);                                                     \n\
+};                                                            \n\
+                                                              \n\
+exports.down = function(next){                                \n\
+  this.dropTable('test_table2', next);                        \n\
+};"
