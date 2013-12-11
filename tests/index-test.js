@@ -145,6 +145,36 @@ describe('node-migrate-orm2', function(done){
         })
       })
     });
+
+    it('runs a specific (and legitimate) down migration successfully', function(done){
+      down = function(err, cb){
+        task.down('001-create-table1.js', function(err, result){
+          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            result.length.should.eql(2);
+            conn.db.all('PRAGMA table_info(table1)', function(err, result){
+              result.length.should.eql(0);
+              cb();
+            });
+          })
+        })
+      }
+
+      task.run(function(err, result){
+        fs.writeFile('migrations/001-create-table1.js', table1Migration, function(err, result){
+          task.up('', function(err, result){
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              result.length.should.eql(1);
+              result[0].direction.should.eql('up');
+              conn.db.all('PRAGMA table_info(table1)', function(err, result){
+                result.length.should.eql(2);
+                down(null, done);
+              })
+            });
+          })
+        })
+      })
+    });
+
   });
 });
 
