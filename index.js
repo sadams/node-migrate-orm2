@@ -24,10 +24,11 @@ MigrationTask.prototype.run = function(done) {
  */
 
 MigrationTask.prototype.migrations = function() {
+  self = this;
   return fs.readdirSync(this.dir).filter(function(file){
     return file.match(/^\d+.*\.js$/);
   }).sort().map(function(file){
-      return 'migrations/' + file;
+      return self.dir + '/' + file;
     });
 }
 
@@ -127,12 +128,12 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
   this.migrate(this.dir + '/.migrate');
   self = this;
   this.migrations().forEach(function(path){
+    console.log(path)
     var mod = require(process.cwd() + '/' + path);
     self.migrate(path, mod.up, mod.down);
   });
 
   var set = this.migrate();
-  self = this;
 
   set.on('migration', function(migration, direction){
     log(direction, migration.title);
