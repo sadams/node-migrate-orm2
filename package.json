@@ -7,14 +7,11 @@
     "type": "git",
     "url": "git://github.com/nicholasf/node-migrate-orm2.git"
   },
-  "bin": {
-    "orm2-migrate": "./bin/orm2-migrate"
-  },
-  "author": "",
+  "author": "nicholasf, Arek W, vaskas, benkitzelman, sidorares",
   "bugs": {
     "url": "https://github.com/nicholasf/node-migrate-orm2/issues"
   },
-  "homepage": "https://github.com/nicholasf/node-migrate-orm2",
+  "homepage": "https://github.com/locomote/node-migrate-orm2",
   "dependencies": {
     "sql-ddl-sync": "git+ssh://git@github.com:locomote/node-sql-ddl-sync",
     "migrate": "~0.1.3",
