@@ -1,6 +1,7 @@
-var join  = require('path').join
-  , fs    = require('fs')
-  , async = require('async');
+var join    = require('path').join
+  , fs      = require('fs')
+  , mkdirp  = require('mkdirp')
+  , async   = require('async');
 
 
 function MigrationTask(connection, dir){
@@ -12,7 +13,7 @@ function MigrationTask(connection, dir){
 
 MigrationTask.prototype.run = function(done) {
   var self = this;
-  fs.mkdir(this.dir, 0774, function (err) {
+  mkdirp(this.dir, 0774, function (err) {
     self.createMigrationsTable(function (err) {
       done(null);
     })
@@ -70,8 +71,6 @@ var template = [
   , '};'
   , ''
 ].join('\n');
-
-var migrationsTableSQL = "CREATE table ORM2_MIGRATIONS(migration varchar(255), direction varchar(5), created_at datetime);"
 
 var orm2Migrations = {
   migration  : { type : "text", required: true },
