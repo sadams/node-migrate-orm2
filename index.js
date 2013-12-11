@@ -136,7 +136,8 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
 
   set.on('migration', function(migration, direction){
     log(direction, migration.title);
-    self.writeQueue.push({direction: direction, migration: migration.title, connection: self.connection})
+    self.writeQueue.push({direction: direction, migration: migration.title, connection: self.connection});
+    console.log(' ... ');
   });
 
   set.on('save', function(){
@@ -159,7 +160,10 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
  */
 
 MigrationTask.prototype.up = function(migrationName, cb){
-  this.performMigration('up', migrationName, cb);
+  self = this;
+  this.run(function(){
+    self.performMigration('up', migrationName, cb);
+  })
 }
 
 /**
@@ -167,7 +171,10 @@ MigrationTask.prototype.up = function(migrationName, cb){
  */
 
 MigrationTask.prototype.down =  function(migrationName, cb){
-  this.performMigration('down', migrationName, cb);
+  self = this;
+  this.run(function(){
+    self.performMigration('down', migrationName, cb);
+  })
 }
 
 /**

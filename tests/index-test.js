@@ -147,7 +147,7 @@ describe('node-migrate-orm2', function(done){
     });
 
     it('runs a specific (and legitimate) down migration successfully', function(done){
-      down = function(err, cb){
+      down = function(err, cb){  //tidy this up, it's a copy n paste from the no arg down
         task.down('001-create-table1.js', function(err, result){
           conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
             result.length.should.eql(2);
@@ -174,8 +174,68 @@ describe('node-migrate-orm2', function(done){
         })
       })
     });
-
   });
+
+  describe('multi file migrations', function(done){
+
+    beforeEach(function(done){
+      task.run(function(err, result){
+        fs.writeFile('migrations/001-create-table1.js', table1Migration, function(err, result){
+          fs.writeFile('migrations/002-create-table2.js', table2Migration, function(err, result){
+           done();
+          })
+        })
+      })
+    });
+
+    it('migrates up', function(done){
+      task.up('', function(err, result){
+        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+          result.length.should.eql(2);
+          result[0].migration.should.eql('001-create-table1.js');
+          result[1].migration.should.eql('002-create-table2.js');
+          done();
+        });
+      })
+    });
+
+    it('migrates up, then migrates down to the specified file', function(done){
+      task.up('', function(err, result){
+        task.down('002-create-table2.js', function(err, result){
+          conn.db.all('PRAGMA table_info(table2)', function(err, result){
+            result.length.should.eql(0);
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              result.length.should.eql(3);
+              result[0].direction.should.eql('up');
+              result[1].direction.should.eql('up');
+              result[2].direction.should.eql('down');
+              should.strictEqual(result[3], undefined);
+              done();
+            });
+          });
+        });
+      })
+    });
+
+    it('migrates up and down simply', function(done){
+      task.up('', function(err, result){
+        task.down('', function(err, result){
+          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            result.length.should.eql(4);
+            result[0].direction.should.eql('up');
+            result[0].migration.should.eql('001-create-table1.js');
+            result[1].direction.should.eql('up');
+            result[1].migration.should.eql('002-create-table2.js');
+            result[2].direction.should.eql('down');
+            result[2].migration.should.eql('002-create-table2.js');
+            result[3].direction.should.eql('down');
+            result[3].migration.should.eql('001-create-table1.js');
+            done();
+          });
+        })
+      })
+    })
+  })
 });
 
 
@@ -192,7 +252,7 @@ exports.down = function (next){                               \n\
 "
 
 var table2Migration = "\exports.up = function(next){          \n\
-this.createTable('test_table2', {                             \n\
+this.createTable('table2', {                             \n\
   id     : { type : \"number\", primary: true, serial: true },\n\
   int2   : { type : \"number\", size: 2 },                    \n\
   int4   : { type : \"number\", size: 4 },                    \n\
@@ -203,5 +263,5 @@ this.createTable('test_table2', {                             \n\
 };                                                            \n\
                                                               \n\
 exports.down = function(next){                                \n\
-  this.dropTable('test_table2', next);                        \n\
+  this.dropTable('table2', next);                             \n\
 };"
