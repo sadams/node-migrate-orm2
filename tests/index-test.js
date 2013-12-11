@@ -188,6 +188,8 @@ describe('node-migrate-orm2', function(done){
       })
     });
 
+
+
     it('migrates up', function(done){
       task.up('', function(err, result){
         conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
@@ -214,6 +216,22 @@ describe('node-migrate-orm2', function(done){
             });
           });
         });
+      })
+    });
+
+    it('migrates up to a file, then resumes there from another up call', function(done){
+      task.up('001-create-table1.js', function(err, result){
+        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+          var lastIdx = result.length -1;
+          result[lastIdx].migration.should.eql('001-create-table1.js');
+          task.up('002-create-table2.js', function(err, result){
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              var lastIdx = result.length -1;
+              result[lastIdx].migration.should.eql('002-create-table2.js');
+              done();
+            })
+          })
+        })
       })
     });
 

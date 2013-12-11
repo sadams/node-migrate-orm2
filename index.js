@@ -137,7 +137,6 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
   set.on('migration', function(migration, direction){
     log(direction, migration.title);
     self.writeQueue.push({direction: direction, migration: migration.title, connection: self.connection});
-    console.log(' ... ');
   });
 
   set.on('save', function(){
@@ -160,8 +159,12 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
  */
 
 MigrationTask.prototype.up = function(migrationName, cb){
-  self = this;
+  var self = this;
   this.run(function(){
+//    if (!migrationName){
+//      migrationName = this.getLastMigration()
+//    }
+
     self.performMigration('up', migrationName, cb);
   })
 }
@@ -171,7 +174,7 @@ MigrationTask.prototype.up = function(migrationName, cb){
  */
 
 MigrationTask.prototype.down =  function(migrationName, cb){
-  self = this;
+  var self = this;
   this.run(function(){
     self.performMigration('down', migrationName, cb);
   })
@@ -182,7 +185,7 @@ MigrationTask.prototype.down =  function(migrationName, cb){
  */
 
 MigrationTask.prototype.generate = function(title, cb){
-  self = this;
+  var self = this;
   this.run(function(){
     var migrations = fs.readdirSync(self.dir).filter(function(file){
       return file.match(/^\d+/);
