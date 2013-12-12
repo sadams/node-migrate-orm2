@@ -16,7 +16,7 @@ var getConnection = function(){
 
 var cleanup = function(folder, cb){
   rimraf(join(this.process.cwd() ,folder), function(err, result){
-    conn.db.all('drop table ORM2_MIGRATIONS', cb)
+    conn.db.all('drop table ORM_MIGRATIONS', cb)
   })
 }
 
@@ -60,11 +60,11 @@ describe('node-migrate-orm2', function(done){
       })
     });
 
-    it('creates the ORM2_MIGRATIONS table', function(done){
+    it('creates the ORM_MIGRATIONS table', function(done){
       task.run(
         function(err, result){
           should.not.exist(err);
-          conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
+          conn.db.all('select count(*) from ORM_MIGRATIONS', function(err, result){
             should.not.exist(err);
             done();
           });
@@ -94,7 +94,7 @@ describe('node-migrate-orm2', function(done){
       task.run(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
           task.up(function(err, result){
-            conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
+            conn.db.all('select count(*) from ORM_MIGRATIONS', function(err, result){
               result[0]['count(*)'].should.eql(1)
               done();
             });
@@ -107,7 +107,7 @@ describe('node-migrate-orm2', function(done){
       task.run(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
           task.up('001-create-table1.js', function(err, result){
-            conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
+            conn.db.all('select count(*) from ORM_MIGRATIONS', function(err, result){
               result[0]['count(*)'].should.eql(1)
               done();
             });
@@ -121,7 +121,7 @@ describe('node-migrate-orm2', function(done){
     it('runs a no arg down migrations successfully', function(done){
       down = function(err, cb){
         task.down(function(err, result){
-          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+          conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
             result.length.should.eql(2);
             conn.db.all('PRAGMA table_info(table1)', function(err, result){
               result.length.should.eql(0);
@@ -134,7 +134,7 @@ describe('node-migrate-orm2', function(done){
       task.run(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
           task.up(function(err, result){
-            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
               result.length.should.eql(1);
               result[0].direction.should.eql('up');
               conn.db.all('PRAGMA table_info(table1)', function(err, result){
@@ -150,7 +150,7 @@ describe('node-migrate-orm2', function(done){
     it('runs a specific (and legitimate) down migration successfully', function(done){
       down = function(err, cb){  //tidy this up, it's a copy n paste from the no arg down
         task.down('001-create-table1.js', function(err, result){
-          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+          conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
             result.length.should.eql(2);
             conn.db.all('PRAGMA table_info(table1)', function(err, result){
               result.length.should.eql(0);
@@ -163,7 +163,7 @@ describe('node-migrate-orm2', function(done){
       task.run(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
           task.up(function(err, result){
-            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
               result.length.should.eql(1);
               result[0].direction.should.eql('up');
               conn.db.all('PRAGMA table_info(table1)', function(err, result){
@@ -193,7 +193,7 @@ describe('node-migrate-orm2', function(done){
 
     it('migrates up', function(done){
       task.up(function(err, result){
-        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+        conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
           result.length.should.eql(2);
           result[0].migration.should.eql('001-create-table1.js');
           result[1].migration.should.eql('002-create-table2.js');
@@ -207,7 +207,7 @@ describe('node-migrate-orm2', function(done){
         task.down('002-create-table2.js', function(err, result){
           conn.db.all('PRAGMA table_info(table2)', function(err, result){
             result.length.should.eql(0);
-            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
               result.length.should.eql(3);
               result[0].direction.should.eql('up');
               result[1].direction.should.eql('up');
@@ -222,11 +222,11 @@ describe('node-migrate-orm2', function(done){
 
     it('migrates up to a file, then resumes there from another up call', function(done){
       task.up('001-create-table1.js', function(err, result){
-        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+        conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
           var lastIdx = result.length -1;
           result[lastIdx].migration.should.eql('001-create-table1.js');
           task.up('002-create-table2.js', function(err, result){
-            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
               var lastIdx = result.length -1;
               result[lastIdx].migration.should.eql('002-create-table2.js');
               done();
@@ -239,7 +239,7 @@ describe('node-migrate-orm2', function(done){
     it('migrates up and down simply', function(done){
       task.up(function(err, result){
         task.down('', function(err, result){
-          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+          conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
             result.length.should.eql(4);
             result[0].direction.should.eql('up');
             result[0].migration.should.eql('001-create-table1.js');

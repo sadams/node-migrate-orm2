@@ -75,13 +75,13 @@ var template = [
 var orm2Migrations = {
   migration  : { type : "text", required: true },
   direction  : { type : "text", required: true },
-  created_at : { type : "date", required: true }
+  created_at : { type : "text", required: true }
 }
 
 MigrationTask.prototype.createMigrationsTable = function (cb) {
   var dsl = this.migrate.dsl;
   var self = this;
-  dsl.createTable('ORM2_MIGRATIONS', orm2Migrations, cb);
+  dsl.createTable('ORM_MIGRATIONS', orm2Migrations, cb);
 }
 
 record = function(item, cb) {
@@ -92,7 +92,7 @@ record = function(item, cb) {
   var migrationBits = migration.split("/"); //remove reference to MigrationTask.dir
   migration = migrationBits[migrationBits.length -1]
 
-  var sqlStr = "INSERT into ORM2_MIGRATIONS(migration, direction, created_at) VALUES('" + migration + "'";
+  var sqlStr = "INSERT into \"ORM_MIGRATIONS\"(migration, direction, created_at) VALUES('" + migration + "'";
   sqlStr     += ", '" + direction + "'";
   sqlStr     += ", '" + new Date() + "')";
 
@@ -128,7 +128,6 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
   this.migrate(this.dir + '/.migrate');
   self = this;
   this.migrations().forEach(function(path){
-    console.log(path)
     var mod = require(process.cwd() + '/' + path);
     self.migrate(path, mod.up, mod.down);
   });
