@@ -75,7 +75,7 @@ var template = [
 var orm2Migrations = {
   migration  : { type : "text", required: true },
   direction  : { type : "text", required: true },
-  created_at : { type : "text", required: true }
+  created_at : { type : "date", time: true, required: true }
 }
 
 MigrationTask.prototype.createMigrationsTable = function (cb) {
@@ -94,7 +94,7 @@ record = function(item, cb) {
 
   var sqlStr = "INSERT into \"ORM_MIGRATIONS\"(migration, direction, created_at) VALUES('" + migration + "'";
   sqlStr     += ", '" + direction + "'";
-  sqlStr     += ", '" + new Date() + "')";
+  sqlStr     += ", '" + new Date().toISOString() + "')";
 
   //a hack until we can call a dialects module for orm2
   switch (connection.dialect) {
