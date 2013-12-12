@@ -23,11 +23,11 @@ var cleanup = function(folder, cb){
 describe('node-migrate-orm2', function(done){
   beforeEach(function(){
     conn = getConnection();
-    task = new Task(conn);
+    task = new Task(conn, 'foo/bar');
   })
 
   afterEach(function(done){
-    cleanup('migrations', function(err, result){
+    cleanup(task.dir, function(err, result){
       done();
     })
   })
@@ -73,187 +73,188 @@ describe('node-migrate-orm2', function(done){
     });
   });
 
-//  describe('#generate', function(done){
-//    it('generates a migration', function(done){
-//      task.generate('test1', function(err, filename){
-//        fs.exists(task.dir + filename + '.js', function(exists){
-//          exists.should.be.ok;
-//          done()
-//        });
-//      });
-//    });
-//  })
-//
-//  describe('#up', function(done){
-//    afterEach(function(done){
-//      conn.db.all('drop table table1;', done)
-//    });
-//
-//    it('runs a no arg up migrations successfully', function(done){
-//      task.run(function(err, result){
-//        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-//          task.up('', function(err, result){
-//            conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
-//              result[0]['count(*)'].should.eql(1)
-//              done();
-//            });
-//          })
-//        })
-//      })
-//    });
-//
-//    it('runs a specific up migration successfully', function(done){
-//      task.run(function(err, result){
-//        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-//          task.up('001-create-table1.js', function(err, result){
-//            conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
-//              result[0]['count(*)'].should.eql(1)
-//              done();
-//            });
-//          })
-//        })
-//      })
-//    });
-//  })
-//
-//  describe('#down', function(done){
-//    it('runs a no arg down migrations successfully', function(done){
-//      down = function(err, cb){
-//        task.down('', function(err, result){
-//          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//            result.length.should.eql(2);
-//            conn.db.all('PRAGMA table_info(table1)', function(err, result){
-//              result.length.should.eql(0);
-//              cb();
-//            });
-//          })
-//        })
-//      }
-//
-//      task.run(function(err, result){
-//        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-//          task.up('', function(err, result){
-//            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//              result.length.should.eql(1);
-//              result[0].direction.should.eql('up');
-//              conn.db.all('PRAGMA table_info(table1)', function(err, result){
-//                result.length.should.eql(2);
-//                down(null, done);
-//              })
-//            });
-//          })
-//        })
-//      })
-//    });
-//
-//    it('runs a specific (and legitimate) down migration successfully', function(done){
-//      down = function(err, cb){  //tidy this up, it's a copy n paste from the no arg down
-//        task.down('001-create-table1.js', function(err, result){
-//          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//            result.length.should.eql(2);
-//            conn.db.all('PRAGMA table_info(table1)', function(err, result){
-//              result.length.should.eql(0);
-//              cb();
-//            });
-//          })
-//        })
-//      }
-//
-//      task.run(function(err, result){
-//        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-//          task.up('', function(err, result){
-//            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//              result.length.should.eql(1);
-//              result[0].direction.should.eql('up');
-//              conn.db.all('PRAGMA table_info(table1)', function(err, result){
-//                result.length.should.eql(2);
-//                down(null, done);
-//              })
-//            });
-//          })
-//        })
-//      })
-//    });
-//  });
-//
-//  describe('multi file migrations', function(done){
-//
-//    beforeEach(function(done){
-//      task.run(function(err, result){
-//        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-//          fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(err, result){
-//           done();
-//          })
-//        })
-//      })
-//    });
-//
-//
-//
-//    it('migrates up', function(done){
-//      task.up('', function(err, result){
-//        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//          result.length.should.eql(2);
-//          result[0].migration.should.eql('001-create-table1.js');
-//          result[1].migration.should.eql('002-create-table2.js');
-//          done();
-//        });
-//      })
-//    });
-//
-//    it('migrates up, then migrates down to the specified file', function(done){
-//      task.up('', function(err, result){
-//        task.down('002-create-table2.js', function(err, result){
-//          conn.db.all('PRAGMA table_info(table2)', function(err, result){
-//            result.length.should.eql(0);
-//            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//              result.length.should.eql(3);
-//              result[0].direction.should.eql('up');
-//              result[1].direction.should.eql('up');
-//              result[2].direction.should.eql('down');
-//              should.strictEqual(result[3], undefined);
-//              done();
-//            });
-//          });
-//        });
-//      })
-//    });
-//
-//    it('migrates up to a file, then resumes there from another up call', function(done){
-//      task.up('001-create-table1.js', function(err, result){
-//        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//          var lastIdx = result.length -1;
-//          result[lastIdx].migration.should.eql('001-create-table1.js');
-//          task.up('002-create-table2.js', function(err, result){
-//            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//              var lastIdx = result.length -1;
-//              result[lastIdx].migration.should.eql('002-create-table2.js');
-//              done();
-//            })
-//          })
-//        })
-//      })
-//    });
-//
-//    it('migrates up and down simply', function(done){
-//      task.up('', function(err, result){
-//        task.down('', function(err, result){
-//          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
-//            result.length.should.eql(4);
-//            result[0].direction.should.eql('up');
-//            result[0].migration.should.eql('001-create-table1.js');
-//            result[1].direction.should.eql('up');
-//            result[1].migration.should.eql('002-create-table2.js');
-//            result[2].direction.should.eql('down');
-//            result[2].migration.should.eql('002-create-table2.js');
-//            result[3].direction.should.eql('down');
-//            result[3].migration.should.eql('001-create-table1.js');
-//            done();
-//          });
-//        })
-//      })
-//    })
-//  })
+  describe('#generate', function(done){
+    it('generates a migration', function(done){
+      task.generate('test1', function(err, filename){
+        var filePath = this.process.cwd() +  '/' + task.dir + '/' + filename + '.js';
+        fs.exists(filePath, function(exists){
+          exists.should.be.ok;
+          done()
+        });
+      });
+    });
+  })
+
+  describe('#up', function(done){
+    afterEach(function(done){
+      conn.db.all('drop table table1;', done)
+    });
+
+    it('runs a no arg up migrations successfully', function(done){
+      task.run(function(err, result){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
+          task.up('', function(err, result){
+            conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
+              result[0]['count(*)'].should.eql(1)
+              done();
+            });
+          })
+        })
+      })
+    });
+
+    it('runs a specific up migration successfully', function(done){
+      task.run(function(err, result){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
+          task.up('001-create-table1.js', function(err, result){
+            conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
+              result[0]['count(*)'].should.eql(1)
+              done();
+            });
+          })
+        })
+      })
+    });
+  })
+
+  describe('#down', function(done){
+    it('runs a no arg down migrations successfully', function(done){
+      down = function(err, cb){
+        task.down('', function(err, result){
+          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            result.length.should.eql(2);
+            conn.db.all('PRAGMA table_info(table1)', function(err, result){
+              result.length.should.eql(0);
+              cb();
+            });
+          })
+        })
+      }
+
+      task.run(function(err, result){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
+          task.up('', function(err, result){
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              result.length.should.eql(1);
+              result[0].direction.should.eql('up');
+              conn.db.all('PRAGMA table_info(table1)', function(err, result){
+                result.length.should.eql(2);
+                down(null, done);
+              })
+            });
+          })
+        })
+      })
+    });
+
+    it('runs a specific (and legitimate) down migration successfully', function(done){
+      down = function(err, cb){  //tidy this up, it's a copy n paste from the no arg down
+        task.down('001-create-table1.js', function(err, result){
+          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            result.length.should.eql(2);
+            conn.db.all('PRAGMA table_info(table1)', function(err, result){
+              result.length.should.eql(0);
+              cb();
+            });
+          })
+        })
+      }
+
+      task.run(function(err, result){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
+          task.up('', function(err, result){
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              result.length.should.eql(1);
+              result[0].direction.should.eql('up');
+              conn.db.all('PRAGMA table_info(table1)', function(err, result){
+                result.length.should.eql(2);
+                down(null, done);
+              })
+            });
+          })
+        })
+      })
+    });
+  });
+
+  describe('multi file migrations', function(done){
+
+    beforeEach(function(done){
+      task.run(function(err, result){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
+          fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(err, result){
+           done();
+          })
+        })
+      })
+    });
+
+
+
+    it('migrates up', function(done){
+      task.up('', function(err, result){
+        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+          result.length.should.eql(2);
+          result[0].migration.should.eql('001-create-table1.js');
+          result[1].migration.should.eql('002-create-table2.js');
+          done();
+        });
+      })
+    });
+
+    it('migrates up, then migrates down to the specified file', function(done){
+      task.up('', function(err, result){
+        task.down('002-create-table2.js', function(err, result){
+          conn.db.all('PRAGMA table_info(table2)', function(err, result){
+            result.length.should.eql(0);
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              result.length.should.eql(3);
+              result[0].direction.should.eql('up');
+              result[1].direction.should.eql('up');
+              result[2].direction.should.eql('down');
+              should.strictEqual(result[3], undefined);
+              done();
+            });
+          });
+        });
+      })
+    });
+
+    it('migrates up to a file, then resumes there from another up call', function(done){
+      task.up('001-create-table1.js', function(err, result){
+        conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+          var lastIdx = result.length -1;
+          result[lastIdx].migration.should.eql('001-create-table1.js');
+          task.up('002-create-table2.js', function(err, result){
+            conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+              var lastIdx = result.length -1;
+              result[lastIdx].migration.should.eql('002-create-table2.js');
+              done();
+            })
+          })
+        })
+      })
+    });
+
+    it('migrates up and down simply', function(done){
+      task.up('', function(err, result){
+        task.down('', function(err, result){
+          conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
+            result.length.should.eql(4);
+            result[0].direction.should.eql('up');
+            result[0].migration.should.eql('001-create-table1.js');
+            result[1].direction.should.eql('up');
+            result[1].migration.should.eql('002-create-table2.js');
+            result[2].direction.should.eql('down');
+            result[2].migration.should.eql('002-create-table2.js');
+            result[3].direction.should.eql('down');
+            result[3].migration.should.eql('001-create-table1.js');
+            done();
+          });
+        })
+      })
+    })
+  })
 });
 
 

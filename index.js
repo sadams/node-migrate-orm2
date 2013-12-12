@@ -89,7 +89,8 @@ record = function(item, cb) {
   var migration = item.migration;
   var direction = item.direction;
 
-  migration = migration.split('/')[1]; //remove reference to MigrationTask.dir
+  var migrationBits = migration.split("/"); //remove reference to MigrationTask.dir
+  migration = migrationBits[migrationBits.length -1]
 
   var sqlStr = "INSERT into ORM2_MIGRATIONS(migration, direction, created_at) VALUES('" + migration + "'";
   sqlStr     += ", '" + direction + "'";
@@ -148,7 +149,7 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
   });
 
   var migrationPath = migrationName
-    ? join('migrations', migrationName)
+    ? join(this.dir, migrationName)
     : migrationName;
 
   set[direction](null, migrationPath);
