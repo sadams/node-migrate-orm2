@@ -266,6 +266,38 @@ describe('node-migrate-orm2', function(done){
       })
     })
   })
+
+  describe('#up, stop, then #up again from the remembered position', function(done){
+
+    beforeEach(function(done){
+      task.run(function(e, r){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+        })
+    });
+2
+    afterEach(function(done){
+      conn.db.all('drop table table1;', done)
+    });
+
+
+    it('remembers', function(done){
+      task.up(function(err, result){
+        conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
+          result[0].migration.should.eql('001-create-table1.js');
+          task2 = new Task(conn, {dir: 'foo/bar'});
+          fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(e, r){
+            task2.up(function(err, result){
+              conn.db.all('select * from ORM_MIGRATIONS', function(err, result){
+                result[1].migration.should.eql('002-create-table2.js');
+                done();
+              })
+            })
+          });
+        })
+      })
+    });
+  })
+
 });
 
 

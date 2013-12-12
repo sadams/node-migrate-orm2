@@ -1,16 +1,18 @@
 var join    = require('path').join
   , fs      = require('fs')
   , mkdirp  = require('mkdirp')
-  , async   = require('async');
+  , async   = require('async')
+  , _       = require('lodash');
 
 
 function MigrationTask(connection, opts){
-  this.connection     = connection;
-  opts                = (opts || {})
-  this.dir            = (opts.dir || 'migrations');
-  this.coffee         = (opts.coffee || false);
-  this.migrate        = require('./lib/migration-dsl')(connection);
-  this.writeQueue     = [];
+  this.connection       = connection;
+  opts                  = (opts || {})
+  this.dir              = (opts.dir || 'migrations');
+  this.coffee           = (opts.coffee || false);
+  this.migrate          = require('./lib/migration-dsl')(connection);
+  this.writeQueue       = [];
+  this.resumptionPoint  = 0;
 }
 
 MigrationTask.prototype.run = function(done) {
@@ -95,32 +97,95 @@ var orm2Migrations = {
   created_at : { type : "date", time: true, required: true }
 }
 
-MigrationTask.prototype.createMigrationsTable = function (cb) {
+MigrationTask.prototype.createMigrationsTable = function(cb) {
   var dsl = this.migrate.dsl;
   var self = this;
-  dsl.createTable('ORM_MIGRATIONS', orm2Migrations, cb);
+
+  var recallPositionFallback = function(err, result){
+    if (err){ //ORM_MIGRATIONS already exists, so we need to load the previous position
+      self.recallPosition(cb)
+    }
+    else {
+      cb();
+    }
+  }
+
+  dsl.createTable('ORM_MIGRATIONS', orm2Migrations, recallPositionFallback);
 }
 
-record = function(item, cb) {
-  var connection = item.connection;
-  var migration = item.migration;
-  var direction = item.direction;
+MigrationTask.prototype.recallPosition =  function(cb){
+  self = this;
 
+  var positoner = function(migrationName, cb){
+    var migrations = _.map(self.migrations(), function(migrationPath){ return migrationWithoutPath(migrationPath) })
+    var idx = _.indexOf(migrations, migrationName, true);
+    if (idx >= 0) {
+      self.resumptionPoint = idx + 1;
+    }
+    cb();
+  }
+
+  switch(this.connection.dialect){
+    case 'postgresql':
+      currentPostgresMigration(this.connection, positoner, cb)
+      break;
+    case 'sqlite':
+      currentSqliteMigration(this.connection, positoner, cb)
+      break;
+  }
+}
+
+function currentPostgresMigration(connection, positioner, cb){
+  var sql = "select migration from \"ORM_MIGRATIONS\" order by created_at desc limit 1;";
+  execute(connection, sql, function(e,r){
+    if (r.rowCount == 0){
+      cb('', e);
+    } else {
+      positioner(r.rows[0].migration, cb)
+    }
+  })
+}
+
+function currentSqliteMigration(connection, positioner, cb){
+//  var sql = "select migration from \"ORM_MIGRATIONS\" order by created_at desc limit 1;";
+  var sql = "select * from \"ORM_MIGRATIONS\" order by created_at desc limit 1;";
+
+  execute(connection, sql, function(e,r){
+    console.log(arguments)
+    if (r.length == 0){
+      cb('', e);
+    } else {
+      positioner(r[0].migration, cb);
+    }
+  })
+}
+
+function execute(connection, sql, cb){
+  switch (connection.dialect) {
+    case 'sqlite':
+      connection.db.all(sql, cb)
+      break;
+    default:
+      connection.db.query(sql, cb)
+      break;
+  }
+}
+
+function migrationWithoutPath(migration){
   var migrationBits = migration.split("/"); //remove reference to MigrationTask.dir
-  migration = migrationBits[migrationBits.length -1]
+  return migrationBits[migrationBits.length -1];
+}
+
+function record(item, cb) {
+  var connection = item.connection;
+  var direction = item.direction;
+  var migration = migrationWithoutPath(item.migration);
 
   var sqlStr = "INSERT into \"ORM_MIGRATIONS\"(migration, direction, created_at) VALUES('" + migration + "'";
   sqlStr     += ", '" + direction + "'";
   sqlStr     += ", '" + new Date().toISOString() + "')";
 
-  //a hack until we can call a dialects module for orm2
-  switch (connection.dialect) {
-    case 'sqlite':
-      connection.db.all(sqlStr, cb)
-      break;
-    default:
-      connection.db.query(sqlStr, cb)
-  }
+  execute(connection, sqlStr, cb);
 }
 
 /**
@@ -144,6 +209,11 @@ function generate(name, extension, templateName) {
 
 MigrationTask.prototype.performMigration = function(direction, migrationName, cb) {
   this.migrate(this.dir + '/.migrate');
+
+  if (this.resumptionPoint > 0){
+    this.migrate.set.pos = this.resumptionPoint;
+  }
+
   self = this;
   this.migrations().forEach(function(path){
     var mod = require(process.cwd() + '/' + path);
@@ -184,10 +254,6 @@ MigrationTask.prototype.up = function(migrationName, cb){
 
   var self = this;
   this.run(function(){
-//    if (!migrationName){
-//      migrationName = this.getLastMigration()
-//    }
-
     self.performMigration('up', migrationName, cb);
   })
 }
@@ -208,7 +274,7 @@ MigrationTask.prototype.down =  function(migrationName, cb){
   })
 }
 
-/**
+  /**
  * create [title]
  */
 
