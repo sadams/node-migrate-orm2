@@ -23,7 +23,7 @@ var cleanup = function(folder, cb){
 describe('node-migrate-orm2', function(done){
   beforeEach(function(){
     conn = getConnection();
-    task = new Task(conn, 'foo/bar');
+    task = new Task(conn, {dir: 'foo/bar'});
   })
 
   afterEach(function(done){
@@ -47,7 +47,7 @@ describe('node-migrate-orm2', function(done){
 
     it('creates the migrations folder with the second argument', function(done){
       cleanup(task.dir, function(err, result){
-        var task = new Task(conn, 'db');
+        var task = new Task(conn, {dir: 'db'});
         task.run(
           function(err, result){
             should.not.exist(err);
@@ -77,6 +77,17 @@ describe('node-migrate-orm2', function(done){
     it('generates a migration', function(done){
       task.generate('test1', function(err, filename){
         var filePath = this.process.cwd() +  '/' + task.dir + '/' + filename + '.js';
+        fs.exists(filePath, function(exists){
+          exists.should.be.ok;
+          done()
+        });
+      });
+    });
+
+    it('generates a coffee migration', function(done){
+      task = new Task(conn, {coffee: true});
+      task.generate('test1', function(err, filename){
+        var filePath = this.process.cwd() +  '/' + task.dir + '/' + filename + '.coffee';
         fs.exists(filePath, function(exists){
           exists.should.be.ok;
           done()

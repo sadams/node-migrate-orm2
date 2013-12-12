@@ -4,11 +4,13 @@ var join    = require('path').join
   , async   = require('async');
 
 
-function MigrationTask(connection, dir){
-  this.connection = connection;
-  this.dir = (dir || 'migrations');
-  this.migrate = require('./lib/migration-dsl')(connection);
-  this.writeQueue = [];
+function MigrationTask(connection, opts){
+  this.connection     = connection;
+  opts                = (opts || {})
+  this.dir            = (opts.dir || 'migrations');
+  this.coffee         = (opts.coffee || false);
+  this.migrate        = require('./lib/migration-dsl')(connection);
+  this.writeQueue     = [];
 }
 
 MigrationTask.prototype.run = function(done) {
@@ -27,7 +29,12 @@ MigrationTask.prototype.run = function(done) {
 MigrationTask.prototype.migrations = function() {
   self = this;
   return fs.readdirSync(this.dir).filter(function(file){
-    return file.match(/^\d+.*\.js$/);
+    if (self.coffee) {
+      return file.match(/^\d+.*\.coffee$/);
+    }
+    else {
+      return file.match(/^\d+.*\.js$/);
+    }
   }).sort().map(function(file){
       return self.dir + '/' + file;
     });
@@ -60,7 +67,7 @@ function pad(n) {
   return Array(4 - n.toString().length).join('0') + n;
 }
 
-var template = [
+var jsTemplate = [
   ''
   , 'exports.up = function(next){'
   , '  next();'
@@ -69,6 +76,16 @@ var template = [
   , 'exports.down = function(next){'
   , '  next();'
   , '};'
+  , ''
+].join('\n');
+
+var coffeeTemplate = [
+  ''
+  , 'exports.up = (next) -> '
+  , '  next()'
+  , ''
+  , 'exports.down = (next) ->'
+  , '  next()'
   , ''
 ].join('\n');
 
@@ -112,8 +129,9 @@ record = function(item, cb) {
  * @param {String} name
  */
 
-function generate(name) {
-  var path = name + '.js';
+function generate(name, extension, templateName) {
+  template = ((extension === "js") ? jsTemplate : coffeeTemplate);
+  var path = name + '.' + extension;
   log('create', join(this.process.cwd(), path));
   fs.writeFileSync(path, template);
 }
@@ -207,7 +225,8 @@ MigrationTask.prototype.generate = function(title, cb){
 
     var curr = pad((migrations.pop() || 0) + 1);
     title = title ? curr + '-' + title : curr;
-    generate(self.dir + '/' + title);
+    var extension = (self.coffee ? 'coffee' : 'js')
+    generate(self.dir + '/' + title, extension);
     cb(null, title);
   })
 }
