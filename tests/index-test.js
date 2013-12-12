@@ -93,7 +93,7 @@ describe('node-migrate-orm2', function(done){
     it('runs a no arg up migrations successfully', function(done){
       task.run(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-          task.up('', function(err, result){
+          task.up(function(err, result){
             conn.db.all('select count(*) from ORM2_MIGRATIONS', function(err, result){
               result[0]['count(*)'].should.eql(1)
               done();
@@ -120,7 +120,7 @@ describe('node-migrate-orm2', function(done){
   describe('#down', function(done){
     it('runs a no arg down migrations successfully', function(done){
       down = function(err, cb){
-        task.down('', function(err, result){
+        task.down(function(err, result){
           conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
             result.length.should.eql(2);
             conn.db.all('PRAGMA table_info(table1)', function(err, result){
@@ -133,7 +133,7 @@ describe('node-migrate-orm2', function(done){
 
       task.run(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-          task.up('', function(err, result){
+          task.up(function(err, result){
             conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
               result.length.should.eql(1);
               result[0].direction.should.eql('up');
@@ -162,7 +162,7 @@ describe('node-migrate-orm2', function(done){
 
       task.run(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-          task.up('', function(err, result){
+          task.up(function(err, result){
             conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
               result.length.should.eql(1);
               result[0].direction.should.eql('up');
@@ -192,7 +192,7 @@ describe('node-migrate-orm2', function(done){
 
 
     it('migrates up', function(done){
-      task.up('', function(err, result){
+      task.up(function(err, result){
         conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
           result.length.should.eql(2);
           result[0].migration.should.eql('001-create-table1.js');
@@ -203,7 +203,7 @@ describe('node-migrate-orm2', function(done){
     });
 
     it('migrates up, then migrates down to the specified file', function(done){
-      task.up('', function(err, result){
+      task.up(function(err, result){
         task.down('002-create-table2.js', function(err, result){
           conn.db.all('PRAGMA table_info(table2)', function(err, result){
             result.length.should.eql(0);
@@ -237,7 +237,7 @@ describe('node-migrate-orm2', function(done){
     });
 
     it('migrates up and down simply', function(done){
-      task.up('', function(err, result){
+      task.up(function(err, result){
         task.down('', function(err, result){
           conn.db.all('select * from ORM2_MIGRATIONS', function(err, result){
             result.length.should.eql(4);

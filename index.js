@@ -160,6 +160,11 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
  */
 
 MigrationTask.prototype.up = function(migrationName, cb){
+  if (typeof migrationName === 'function'){
+    cb = migrationName;
+    migrationName = '';
+  }
+
   var self = this;
   this.run(function(){
 //    if (!migrationName){
@@ -175,6 +180,11 @@ MigrationTask.prototype.up = function(migrationName, cb){
  */
 
 MigrationTask.prototype.down =  function(migrationName, cb){
+  if (typeof migrationName === 'function'){
+    cb = migrationName;
+    migrationName = '';
+  }
+
   var self = this;
   this.run(function(){
     self.performMigration('down', migrationName, cb);
