@@ -94,7 +94,7 @@ var coffeeTemplate = [
 var orm2Migrations = {
   migration  : { type : "text", required: true },
   direction  : { type : "text", required: true },
-  created_at : { type : "date", time: true, required: true }
+  created_at : { type : "text", time: true, required: true }
 }
 
 MigrationTask.prototype.createMigrationsTable = function(cb) {
@@ -102,7 +102,7 @@ MigrationTask.prototype.createMigrationsTable = function(cb) {
   var self = this;
 
   var recallPositionFallback = function(err, result){
-    if (err){ //ORM_MIGRATIONS already exists, so we need to load the previous position
+    if (err){ //orm_migrations already exists, so we need to load the previous position
       self.recallPosition(cb)
     }
     else {
@@ -110,13 +110,13 @@ MigrationTask.prototype.createMigrationsTable = function(cb) {
     }
   }
 
-  dsl.createTable('ORM_MIGRATIONS', orm2Migrations, recallPositionFallback);
+  dsl.createTable('orm_migrations', orm2Migrations, recallPositionFallback);
 }
 
 MigrationTask.prototype.recallPosition =  function(cb){
   self = this;
 
-  var positoner = function(migrationName, cb){
+  var positioner = function(migrationName, cb){
     var migrations = _.map(self.migrations(), function(migrationPath){ return migrationWithoutPath(migrationPath) })
     var idx = _.indexOf(migrations, migrationName, true);
     if (idx >= 0) {
@@ -126,17 +126,31 @@ MigrationTask.prototype.recallPosition =  function(cb){
   }
 
   switch(this.connection.dialect){
-    case 'postgresql':
-      currentPostgresMigration(this.connection, positoner, cb)
-      break;
     case 'sqlite':
-      currentSqliteMigration(this.connection, positoner, cb)
+      currentSqliteMigration(this.connection, positioner, cb)
+      break;
+    case 'postgresql':
+      currentPostgresMigration(this.connection, positioner, cb)
+      break;
+    case 'mysql':
+      currentMySQLMigration(this.connection, positioner, cb)
       break;
   }
 }
 
+function currentMySQLMigration(connection, positioner, cb){
+  var sql = "select migration from orm_migrations order by created_at desc limit 1;";
+  execute(connection, sql, function(e,r){
+    if (r.length == 0){
+      cb('', e);
+    } else {
+      positioner(r[0].migration, cb)
+    }
+  })
+}
+
 function currentPostgresMigration(connection, positioner, cb){
-  var sql = "select migration from \"ORM_MIGRATIONS\" order by created_at desc limit 1;";
+  var sql = "select migration from orm_migrations order by created_at desc limit 1;";
   execute(connection, sql, function(e,r){
     if (r.rowCount == 0){
       cb('', e);
@@ -147,11 +161,10 @@ function currentPostgresMigration(connection, positioner, cb){
 }
 
 function currentSqliteMigration(connection, positioner, cb){
-//  var sql = "select migration from \"ORM_MIGRATIONS\" order by created_at desc limit 1;";
-  var sql = "select * from \"ORM_MIGRATIONS\" order by created_at desc limit 1;";
+//  var sql = "select migration from \"orm_migrations\" order by created_at desc limit 1;";
+  var sql = "select * from orm_migrations order by created_at desc limit 1;";
 
   execute(connection, sql, function(e,r){
-    console.log(arguments)
     if (r.length == 0){
       cb('', e);
     } else {
@@ -181,7 +194,7 @@ function record(item, cb) {
   var direction = item.direction;
   var migration = migrationWithoutPath(item.migration);
 
-  var sqlStr = "INSERT into \"ORM_MIGRATIONS\"(migration, direction, created_at) VALUES('" + migration + "'";
+  var sqlStr = "INSERT into \"orm_migrations\"(migration, direction, created_at) VALUES('" + migration + "'";
   sqlStr     += ", '" + direction + "'";
   sqlStr     += ", '" + new Date().toISOString() + "')";
 
@@ -214,7 +227,7 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
     this.migrate.set.pos = this.resumptionPoint;
   }
 
-  self = this;
+  var self = this;
   this.migrations().forEach(function(path){
     var mod = require(process.cwd() + '/' + path);
     self.migrate(path, mod.up, mod.down);
@@ -224,16 +237,13 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
 
   set.on('migration', function(migration, direction){
     log(direction, migration.title);
-    self.writeQueue.push({direction: direction, migration: migration.title, connection: self.connection});
   });
 
   set.on('save', function(){
     log('migration', 'complete');
-    async.eachSeries(self.writeQueue, record, function(err){
-      self.writeQueue = [];
-      cb(err);
-    })
+    cb();
   });
+
 
   var migrationPath = migrationName
     ? join(this.dir, migrationName)
