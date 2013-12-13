@@ -8,6 +8,8 @@ Documentation coming.
 
 # Connection
 
-var mysql       = require('mysql');
-var db          = mysql.createConnection("mysql://root:@localhost/test");
-var connection = {dialect: 'mysql', db: db}
+```js
+var mysql      = require('mysql');
+var db         = mysql.createConnection("mysql://root:@localhost/test");
+var connection = {dialect: 'mysql', db: db};
+```
