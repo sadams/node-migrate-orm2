@@ -40,11 +40,11 @@ describe('node-migrate-orm2', function(done){
     })
   })
 
-  describe('#run', function(done){
+  describe('#mkdir', function(done){
     beforeEach(function() { cleanup = cleanupDir })
 
     it('creates the default migrations folder', function(done){
-      task.run(
+      task.mkdir(
         function(err, result){
           should.not.exist(err);
           fs.exists(task.dir, function(exists){
@@ -58,7 +58,7 @@ describe('node-migrate-orm2', function(done){
     it('creates the migrations folder with the second argument', function(done){
       cleanup(task.dir, function(err, result){
         var task = new Task(conn, {dir: 'db'});
-        task.run(
+        task.mkdir(
           function(err, result){
             should.not.exist(err);
             fs.exists('db', function(exists){
@@ -118,7 +118,7 @@ describe('node-migrate-orm2', function(done){
       });
 
       it('runs a no arg up migrations successfully', function(done){
-        task.run(function(err, result){
+        task.mkdir(function(err, result){
           fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
             task.up(function(err, result){
               conn.db.query('select count(*) from orm_migrations', function(err, result){
@@ -131,7 +131,7 @@ describe('node-migrate-orm2', function(done){
       });
 
       it('runs a specific up migration successfully', function(done){
-        task.run(function(err, result){
+        task.mkdir(function(err, result){
           fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
             task.up('001-create-table1.js', function(err, result){
               conn.db.query('select count(*) from orm_migrations', function(err, result){
@@ -161,7 +161,7 @@ describe('node-migrate-orm2', function(done){
         })
       }
 
-      task.run(function(err, result){
+      task.mkdir(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
           task.up(function(err, result){
             conn.db.query('select * from orm_migrations', function(err, result){
@@ -190,7 +190,7 @@ describe('node-migrate-orm2', function(done){
         })
       }
 
-      task.run(function(err, result){
+      task.mkdir(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
           task.up(function(err, result){
             conn.db.query('select * from orm_migrations', function(err, result){
@@ -212,7 +212,7 @@ describe('node-migrate-orm2', function(done){
     beforeEach(function() { cleanup = cleanupDbAndDir })
 
     beforeEach(function(done){
-      task.run(function(err, result){
+      task.mkdir(function(err, result){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
           fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(err, result){
            done();
@@ -234,9 +234,8 @@ describe('node-migrate-orm2', function(done){
 
     it('migrates up, then migrates down to the specified file', function(done){
       task.up(function(err, result){
-        task.down('001-create-table1.js', function(err, result){
-          conn.db.query('describe table1', function(err, result){
-            console.log(arguments, " <<<<< ")
+        task.down('002-create-table2.js', function(err, result){
+          conn.db.query('describe table2', function(err, result){
             err.should.exist
             conn.db.query('select * from orm_migrations', function(err, result){
               result.length.should.eql(3);
@@ -271,7 +270,6 @@ describe('node-migrate-orm2', function(done){
       task.up(function(err, result){
         task.down(function(err, result){
           conn.db.query('select * from orm_migrations', function(err, result){
-            //console.log(result);
             result.length.should.eql(4);
             result[0].direction.should.eql('up');
             result[0].migration.should.eql('001-create-table1.js');
@@ -287,61 +285,61 @@ describe('node-migrate-orm2', function(done){
       })
     })
   })
-//
-//  describe('#up, stop, then #up again from the remembered position', function(done){
-//    beforeEach(function(done){
-//      task.run(function(e, r){
-//        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
-//        })
-//    });
-//
-//    afterEach(function(done){
-//      conn.db.query('drop table table1;', done)
-//    });
-//
-//    it('remembers', function(done){
-//      task.up(function(err, result){
-//        conn.db.query('select * from orm_migrations', function(err, result){
-//          result[0].migration.should.eql('001-create-table1.js');
-//          task2 = new Task(conn, {dir: 'foo/bar'});
-//          fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(e, r){
-//            task2.up(function(err, result){
-//              conn.db.query('select * from orm_migrations', function(err, result){
-//                result[1].migration.should.eql('002-create-table2.js');
-//                done();
-//              })
-//            })
-//          });
-//        })
-//      })
-//    });
-//  })
-//
-//  describe('#up, stop, then #down again from the remembered position', function(done){
-//    beforeEach(function(done){
-//      task.run(function(e, r){
-//        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
-//      })
-//    });
-//
-//    it('remembers', function(done){
-//      task.up(function(err, result){
-//        conn.db.query('select * from orm_migrations', function(err, result){
-//          result[0].migration.should.eql('001-create-table1.js');
-//          task2 = new Task(conn, {dir: 'foo/bar'});
-//          fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(e, r){
-//            task2.down(function(err, result){
-//              conn.db.query('select * from orm_migrations', function(err, result){
-//                result[1].migration.should.eql('001-create-table1.js');
-//                result[1].direction.should.eql('down');
-//                done();
-//              })
-//            })
-//          });
-//        })
-//      })
-//    });
-//  })
+
+  describe('#up, stop, then #up again from the remembered position', function(done){
+    beforeEach(function(done){
+      task.mkdir(function(e, r){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+        })
+    });
+
+    afterEach(function(done){
+      conn.db.query('drop table table1;', done)
+    });
+
+    it('remembers', function(done){
+      task.up(function(err, result){
+        conn.db.query('select * from orm_migrations', function(err, result){
+          result[0].migration.should.eql('001-create-table1.js');
+          task2 = new Task(conn, {dir: 'foo/bar'});
+          fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(e, r){
+            task2.up(function(err, result){
+              conn.db.query('select * from orm_migrations', function(err, result){
+                result[1].migration.should.eql('002-create-table2.js');
+                done();
+              })
+            })
+          });
+        })
+      })
+    });
+  })
+
+  describe('#up, stop, then #down again from the remembered position', function(done){
+    beforeEach(function(done){
+      task.mkdir(function(e, r){
+        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+      })
+    });
+
+    it('remembers', function(done){
+      task.up(function(err, result){
+        conn.db.query('select * from orm_migrations', function(err, result){
+          result[0].migration.should.eql('001-create-table1.js');
+          task2 = new Task(conn, {dir: 'foo/bar'});
+          fs.writeFile(task.dir + '/002-create-table2.js', table2Migration, function(e, r){
+            task2.down(function(err, result){
+              conn.db.query('select * from orm_migrations', function(err, result){
+                result[1].migration.should.eql('001-create-table1.js');
+                result[1].direction.should.eql('down');
+                done();
+              })
+            })
+          });
+        })
+      })
+    });
+  })
 });
 
 

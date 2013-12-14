@@ -14,12 +14,10 @@ function MigrationTask(connection, opts){
   this.resumptionPoint  = 0;
 }
 
-MigrationTask.prototype.run = function(done) {
+MigrationTask.prototype.mkdir = function(done) {
   var self = this;
   mkdirp(this.dir, 0774, function (err) {
-//    self.ensureMigrationsTable(function (err) {
-      done(null);
-//    })
+    done(null);
   });
 }
 
@@ -262,7 +260,7 @@ MigrationTask.prototype.up = function(migrationName, cb){
   }
 
   var self = this;
-  this.run(function(){
+  this.mkdir(function(){
     self.performMigration('up', migrationName, cb);
   })
 }
@@ -278,7 +276,7 @@ MigrationTask.prototype.down =  function(migrationName, cb){
   }
 
   var self = this;
-  this.run(function(){
+  this.mkdir(function(){
     self.performMigration('down', migrationName, cb);
   })
 }
@@ -289,7 +287,7 @@ MigrationTask.prototype.down =  function(migrationName, cb){
 
 MigrationTask.prototype.generate = function(title, cb){
   var self = this;
-  this.run(function(){
+  this.mkdir(function(){
     var migrations = fs.readdirSync(self.dir).filter(function(file){
       return file.match(/^\d+/);
     }).map(function(file){
