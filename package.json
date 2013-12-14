@@ -12,6 +12,9 @@
     "url": "https://github.com/nicholasf/node-migrate-orm2/issues"
   },
   "homepage": "https://github.com/locomote/node-migrate-orm2",
+  "scripts": {
+    "test": "mocha test/"
+  },
   "dependencies": {
     "sql-ddl-sync": "git+ssh://git@github.com:locomote/node-sql-ddl-sync",
     "migrate": "~0.1.3",

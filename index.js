@@ -10,7 +10,7 @@ function MigrationTask(connection, opts){
   opts                  = (opts || {})
   this.dir              = (opts.dir || 'migrations');
   this.coffee           = (opts.coffee || false);
-  this.migrate          = require('./lib/migration-dsl')(connection);
+  this.migrate          = require('./lib/migration-dsl')(connection, this);
   this.resumptionPoint  = 0;
 }
 
