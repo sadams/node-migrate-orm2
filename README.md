@@ -192,7 +192,12 @@ mocha test
 
 ## Contributors
 
-* Locomoters - (@nicholasf, @dxg, @vaskas, @benkitzelman, @sidorares).
+Locomoters:
+* @nicholasf
+* @dxg
+* @vaskas
+* @benkitzelman
+* @sidorares
 
 This work is a melding of two underlying libraries:
 
