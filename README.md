@@ -59,7 +59,19 @@ exports.down = function (next){
 
 ```
 
-Note - this supports the following operations:
+Another example for adding or dropping a column:
+
+```
+exports.up = function(next){
+  this.addColumn('agency', preferredProviders: {type: "text", defaultValue: '1G', required: true}, next);
+}
+
+exports.down = function(next){
+  this.dropColumn('agency', 'preferredProvider', next);
+}
+```
+
+So, ```this``` supports the following operations:
 
 * createTable
 * dropTable
@@ -122,9 +134,68 @@ This reflects the history above.
 
 ## Usage - opts
 
+The Task object can be modified to work from a different directory or to generate and cooperate with coffee-script migrations.
+
 ```
 var task = new Task(connection, {dir: 'data/migrations', coffee: true});
 ```
 
-In this case, migrate-orm2 will control the data/migrations directory and would generate and read coffeescript migrations.
+## Usage - grunt
+
+We handcraft grunt and our tasks looks this.
+
+Firstly, we have a helper file which knows how to build the connection and opts and invoke the Task object:
+
+```
+var migrateORM2 = require ('migrate-orm2');
+
+module.exports =  function(operation, grunt, done) {
+  buildConnection({pool: false}, function(err, connection){
+    if(err) throw(err)
+
+    var conn = {dialect: 'postgresql', db: connection.driver.db};
+    var opts = {dir: 'data/migrations', coffee: true};
+    migrateORM2[operation](grunt, conn, opts, done);
+  }
+}
+```
+
+And our Grunt tasks look like this:
+
+```
+grunt.registerAsyncTask('migrate:generate', '', function(done){
+  require('./tasks/db').runMigration('generate', grunt, done);
+})
+
+grunt.registerAsyncTask('migrate:up', '', function(done){
+  require('./tasks/db').runMigration('up', grunt, done);
+}
+
+grunt.registerAsyncTask('migrate:down', '', function(done){
+  require('./tasks/db').runMigration('down', grunt, done);
+}
+```
+
+To generate a migration file or to indicate a direction:
+
+```
+grunt migrate:generate --file=create-users
+grunt migrate:generate --file=create-servers
+grunt migrate:up --file=001-create-users.js
+```
+
+## Running Tests
+
+```
+mocha test
+```
+
+## Contributors
+
+* Locomoters - (@nicholasf, @dxg, @vaskas, @benkitzelman, @sidorares).
+
+This work is a melding of two underlying libraries:
+
+* [node-migrate](https://github.com/visionmedia/node-migrate) from @visionmedia (TJ)
+* [node-sql-ddl-sync](https://github.com/dresende/node-sql-ddl-sync) from @dresende
 
