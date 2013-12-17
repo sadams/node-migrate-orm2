@@ -22,9 +22,11 @@ var cleanupDir = function(folder, cb){
 var cleanupDbAndDir = function(folder, cb){
   rimraf(join(this.process.cwd() ,folder), function(err, result){
     try{
-      conn.db.query('drop table orm_migrations', cb)
+      conn.db.query('drop table orm_migrations', cb);
     }
-    catch(err){};
+    catch(err){
+      cb(err);
+    };
   })
 }
 
@@ -141,6 +143,42 @@ describe('node-migrate-orm2', function(done){
             })
           })
         })
+      });
+
+      describe('#addColumn', function() {
+        beforeEach(function(done){
+          task.mkdir(function(err, result){
+            fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+          });
+        });
+
+
+        it('runs two migrations successfully', function(done){
+          fs.writeFile(task.dir + '/002-add-two-columns.js', column2Migration, function(err, result){
+            task.up(function(err, result){
+              conn.db.query('show columns in table1 like \'wobble\'', function(err, result){
+                console.log(err, "ERR");
+                result[0].Field.should.eql('wobble');
+                conn.db.query('show columns in table1 like \'wibble\'', function(err, result){
+                  result[0].Field.should.eql('wibble');
+                  done();
+                });
+              });
+            });
+          });
+        });
+
+        it('runs one migration successfully', function(done){
+          fs.writeFile(task.dir + '/002-add-one-column.js', column1Migration, function(err, result){
+            task.up(function(err, result){
+              conn.db.query('show columns in table1 like \'malcolm\'', function(err, result){
+                result[0].Field.should.eql('malcolm');
+                done();
+              });
+            });
+          });
+        });
+
       });
     });
   });
@@ -368,4 +406,32 @@ this.createTable('table2', {                             \n\
                                                               \n\
 exports.down = function(next){                                \n\
   this.dropTable('table2', next);                             \n\
+};"
+
+var column1Migration = "exports.up = function (next) {         \n\
+this.addColumn('table1', {                                     \n\
+  malcolm   : { type : \"text\", required: true }              \n\
+}, next);                                                      \n\
+};                                                             \n\
+exports.down = function(next){                                 \n\
+  this.dropColumn('table1', 'malcolm', next);                  \n\
+};"
+
+var column2Migration = "exports.up = function (next) {         \n\
+  var that = this;                                             \n\
+  this.addColumn('table1', {                                   \n\
+    wobble   : { type : \"text\", required: true }             \n\
+  }, function(err) {                                           \n\
+    if(err) { return next(err); }                              \n\
+    that.addColumn('table1', {                                 \n\
+      wibble   : { type : \"text\", required: true }           \n\
+    }, next);                                                  \n\
+  });                                                          \n\
+};                                                             \n\
+exports.down = function(next){                                 \n\
+  var that = this;                                             \n\
+  this.dropColumn('table1', 'wibble', function(err){           \n\
+    if(err) { return next(err); }                              \n\
+    that.dropColumn('table1', 'wobble', next);                 \n\
+  });                                                          \n\
 };"
