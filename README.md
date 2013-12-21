@@ -99,7 +99,7 @@ Alternatively, when there are many migrations, a filename can be specified:
   migration : complete
 ```
 
-This means 'run the up function of the nominated file and end'.
+This means 'run up to this migration then execute its up function, then stop.'
 
 ## Usage - the orm_migrations table
 
@@ -160,7 +160,7 @@ module.exports =  function(operation, grunt, done) {
 }
 ```
 
-And our Grunt tasks look like this:
+And our Grunt tasks looks like this:
 
 ```
 grunt.registerAsyncTask('migrate:generate', '', function(done){
