@@ -1,6 +1,6 @@
 # migrate-orm2
 
-Migrations using ORM2's model DSL leveraging Visionmedia's node-migrate.
+Migrations using [ORM2's](https://github.com/dresende/node-sql-ddl-sync) model DSL leveraging Visionmedia's node-migrate.
 
 ## Installation
 
