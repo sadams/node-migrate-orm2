@@ -222,7 +222,7 @@ describe('node-migrate-orm2', function (done) {
     });
 
     it('runs a specific (and legitimate) down migration successfully', function(done){
-      down = function(err, cb){  //tidy this up, it's a copy n paste FROM the no arg down
+      down = function(err, cb){  //tidy this up, it's a copy n paste from the no arg down
         task.down('001-create-table1.js', function(err, result){
           conn.execQuery('SELECT * FROM orm_migrations', function(err, result){
             should.equal(result.length, 2);
@@ -309,7 +309,7 @@ describe('node-migrate-orm2', function (done) {
       })
     });
 
-    it('migrates up to a file, then resumes there FROM another up cquery', function(done){
+    it('migrates up to a file, then resumes there from another up cquery', function(done){
       task.up('001-create-table1.js', function(err, result){
         conn.execQuery('SELECT * FROM orm_migrations', function(err, result){
           var lastIdx = result.length -1;
@@ -345,7 +345,7 @@ describe('node-migrate-orm2', function (done) {
     })
   })
 
-  describe('#up, stop, then #up again FROM the remembered position', function(done){
+  describe('#up, stop, then #up again from the remembered position', function(done){
     beforeEach(function(done){
       task.mkdir(function(e, r){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
@@ -378,7 +378,7 @@ describe('node-migrate-orm2', function (done) {
     });
   })
 
-  describe('#up, stop, then #down again FROM the remembered position', function(done){
+  describe('#up, stop, then #down again from the remembered position', function(done){
     beforeEach(function(done){
       task.mkdir(function(e, r){
         fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
