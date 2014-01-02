@@ -1,16 +1,17 @@
-var join    = require('path').join
-  , fs      = require('fs')
-  , mkdirp  = require('mkdirp')
-  , async   = require('async')
-  , _       = require('lodash');
+var join         = require('path').join
+  , fs           = require('fs')
+  , mkdirp       = require('mkdirp')
+  , async        = require('async')
+  , _            = require('lodash')
+  , migrationDsl = require('./lib/migration-dsl');
 
 
 function MigrationTask(connection, opts){
-  this.connection       = connection;
   opts                  = (opts || {})
+  this.connection       = connection;
   this.dir              = (opts.dir || 'migrations');
   this.coffee           = (opts.coffee || false);
-  this.migrate          = require('./lib/migration-dsl')(connection, this);
+  this.migrate          = migrationDsl(connection, this);
   this.resumptionPoint  = 0;
 }
 
@@ -35,8 +36,8 @@ MigrationTask.prototype.migrations = function() {
       return file.match(/^\d+.*\.js$/);
     }
   }).sort().map(function(file){
-      return self.dir + '/' + file;
-    });
+    return self.dir + '/' + file;
+  });
 }
 
 /**

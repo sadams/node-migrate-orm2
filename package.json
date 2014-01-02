@@ -7,13 +7,13 @@
     "type": "git",
     "url": "git://github.com/nicholasf/node-migrate-orm2.git"
   },
-  "author": "nicholasf, Arek W, vaskas, benkitzelman, sidorares",
+  "author": "nicholasf, dxg, vaskas, benkitzelman, sidorares",
   "bugs": {
     "url": "https://github.com/nicholasf/node-migrate-orm2/issues"
   },
   "homepage": "https://github.com/locomote/node-migrate-orm2",
   "scripts": {
-    "test": "mocha test/"
+    "test": "node test/run"
   },
   "dependencies": {
     "sql-ddl-sync": "git+ssh://git@github.com:locomote/node-sql-ddl-sync",
@@ -27,6 +27,7 @@
     "should": "~2.1.1",
     "mocha": "~1.15.1",
     "sqlite3": "~2.1.19",
-    "rimraf": "~2.2.5"
+    "rimraf": "~2.2.5",
+    "orm": "2.1.3"
   }
 }
