@@ -9,9 +9,36 @@ var aliases = {
   postgres: 'postgresql'
 };
 
+var travisConfig = {
+  mysql: {
+    protocol : 'mysql',
+    user     : 'root',
+    password : '',
+    query    : { pool: true },
+    database : 'migrate_orm2_test',
+    host     : '127.0.0.1'
+  },
+  postgresql : {
+    protocol : 'postgresql',
+    user     : 'postgres',
+    password : '',
+    query    : { pool: true },
+    database : 'migrate_orm2_test',
+    host     : '127.0.0.1'
+  }
+};
+
 module.exports = {
+  isTravis: function () {
+    return Boolean(process.env.CI);
+  },
+
   config: function () {
-    return require('./config');
+    if (this.isTravis()) {
+      return travisConfig;
+    } else {
+      return require('./config');
+    }
   },
 
   protocol: function () {

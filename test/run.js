@@ -7,7 +7,7 @@ var mocha      = new Mocha({ reporter: "spec" });
 var location   = path.normalize(path.join(__dirname, 'integration'));
 var configPath = path.normalize(path.join(__dirname, 'config.js'));
 
-if (!fs.existsSync(configPath)) {
+if (!helpers.isTravis() && !fs.existsSync(configPath)) {
   console.error("test/config.js is missing. Take a look at test/config.example.js");
   process.exit(1);
 }
