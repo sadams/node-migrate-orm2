@@ -1,4 +1,4 @@
-# migrate-orm2
+# migrate-orm2 [![Build Status](https://travis-ci.org/locomote/node-migrate-orm2.png)](https://travis-ci.org/locomote/node-migrate-orm2)
 
 Migrations using [ORM2's](https://github.com/dresende/node-orm2) model DSL leveraging Visionmedia's node-migrate.
 
