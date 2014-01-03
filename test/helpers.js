@@ -25,7 +25,15 @@ module.exports = {
     var protocol = this.protocol();
 
     if (!(protocol in config)) {
-      return cb(new Error("Protocol '" + protocol + "' missing in config.js"));
+      var emsg = "";
+
+      if (!protocol) {
+        emsg = "No protocol specified. Specify using: ORM_PROTOCOL=mysql mocha test/integration"
+      } else {
+        emsg = "Protocol '" + protocol + "' missing in config.js"
+      }
+
+      return cb(new Error(emsg));
     }
 
     orm.connect(config[protocol], function (err, connection) {

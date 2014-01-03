@@ -186,9 +186,19 @@ grunt migrate:up --file=001-create-users.js
 
 ## Running Tests
 
+Create `test/config.js` (see `test/config.example.js` for instructions)
+
+```bash
+npm test
 ```
-mocha test
+This will run the tests against all configurations inside `config.js`.
+To run against a single config:
+```bash
+ORM_PROTOCOL=mysql node test/run
+# OR
+ORM_PROTOCOL=mysql mocha test/integration
 ```
+
 
 ## Contributors
 

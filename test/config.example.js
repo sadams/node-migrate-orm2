@@ -1,11 +1,10 @@
-// To test, rename this file to config.js and update
-// the following configuration
+// To test, copy this file to test/config.js and update the configuration.
 //
-// To run a single driver, go to root folder and do (mysql example):
+// To run a single driver, go to root folder and:
 // ORM_PROTOCOL=mysql node test/run
 //
 // To run all drivers:
-// node test/run
+// node test/run OR npm test
 
 exports.mysql = {
   protocol : 'mysql',
