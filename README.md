@@ -12,19 +12,16 @@ npm install migrate-orm2
 
 The example below uses MySQL. Locomote uses migrate-orm2 with Postgres. Testing was also done with SQLite3, though some driver issues were encountered.
 
-Build a connection.
+Build a connection & construct the migrate-orm2 Task object:
 
 ```js
-var mysql      = require('mysql');
-var db         = mysql.createConnection("mysql://root:@localhost/test");
-var connection = {dialect: 'mysql', db: db};
-```
+var orm         = require('orm');
+var MigrateTask = require('migrate-orm2');
 
-Construct the migrate-orm2 Task object:
-
-```
-var Task = require('migrate-orm2');
-var task = new Task(connection);
+orm.connect(connectionString, function (err, connection) {
+  if (err) throw err;
+  var task = new Task(connection.driver);
+});
 ```
 
 The Task constructor function can support options allowing for a custom migrations directory and/or coffeescript support (see 'Usage - opts' below).
@@ -146,23 +143,26 @@ We handcraft grunt and our tasks looks this.
 
 Firstly, we have a helper file which knows how to build the connection and opts and invoke the Task object:
 
-```
-var migrateORM2 = require ('migrate-orm2');
+```js
+var migrateORM2 = require('migrate-orm2');
 
 module.exports =  function(operation, grunt, done) {
-  buildConnection({pool: false}, function(err, connection){
+  orm.connect(connectionString, function(err, connection){
     if(err) throw(err)
 
-    var conn = {dialect: 'postgresql', db: connection.driver.db};
-    var opts = {dir: 'data/migrations', coffee: true};
-    migrateORM2[operation](grunt, conn, opts, done);
+    migrateORM2[operation](
+      grunt,
+      connection.driver,
+      { dir: 'data/migrations', coffee: true },
+      done
+    );
   }
 }
 ```
 
 And our Grunt tasks looks like this:
 
-```
+```js
 grunt.registerAsyncTask('migrate:generate', '', function(done){
   require('./tasks/db').runMigration('generate', grunt, done);
 })
@@ -178,7 +178,7 @@ grunt.registerAsyncTask('migrate:down', '', function(done){
 
 To generate a migration file or to indicate a direction:
 
-```
+```js
 grunt migrate:generate --file=create-users
 grunt migrate:generate --file=create-servers
 grunt migrate:up --file=001-create-users.js
@@ -186,9 +186,19 @@ grunt migrate:up --file=001-create-users.js
 
 ## Running Tests
 
+Create `test/config.js` (see `test/config.example.js` for instructions)
+
+```bash
+npm test
 ```
-mocha test
+This will run the tests against all configurations inside `config.js`.
+To run against a single config:
+```bash
+ORM_PROTOCOL=mysql node test/run
+# OR
+ORM_PROTOCOL=mysql mocha test/integration
 ```
+
 
 ## Contributors
 
