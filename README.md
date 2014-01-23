@@ -42,7 +42,7 @@ A skeleton migration file now exists and can be populated with the [ORM2 DSL](ht
 
 A simple example, taken from the tests:
 
-```
+```js
 exports.up = function (next) {
   this.createTable('test_table', {
     id     : { type : "number", primary: true, serial: true },
@@ -58,7 +58,7 @@ exports.down = function (next){
 
 Another example for adding or dropping a column:
 
-```
+```js
 exports.up = function(next){
   this.addColumn('agency', preferredProviders: {type: "text", defaultValue: '1G', required: true}, next);
 }
@@ -68,12 +68,31 @@ exports.down = function(next){
 }
 ```
 
+An example of adding an index:
+
+```js
+exports.up = function (next) {
+  this.addIndex('agency_email_idx', {
+    table: 'agency',
+    columns: ['email'],
+    unique: true
+  }, next);
+};
+```
+
+exports.down = function (next) {
+  this.dropIndex('agency_email_idx', 'agency', next);
+};
+
+
 So, ```this``` supports the following operations:
 
 * createTable
 * dropTable
 * addColumn
 * dropColumn
+* addIndex
+* dropIndex
 
 We would like to add modifyColumn functionality in the future.
 
@@ -144,36 +163,40 @@ We handcraft grunt and our tasks looks this.
 Firstly, we have a helper file which knows how to build the connection and opts and invoke the Task object:
 
 ```js
-var migrateORM2 = require('migrate-orm2');
+var MigrationTask = require('migrate-orm2');
+var orm = require('orm');
 
-module.exports =  function(operation, grunt, done) {
-  orm.connect(connectionString, function(err, connection){
-    if(err) throw(err)
+exports.runMigration = function (operation, grunt, done) {
+  orm.settings.set("connection.debug", true);
+  orm.connect('mysql://root@localhost/ninja', function (err, connection) {
+    if (err) throw(err);
 
-    migrateORM2[operation](
-      grunt,
+    var migrationTask = new MigrationTask(
       connection.driver,
-      { dir: 'data/migrations', coffee: true },
-      done
+      { dir: 'data/migrations'}
     );
-  }
-}
+    migrationTask[operation](grunt.option('file'), done);
+  });
+};
 ```
 
-And our Grunt tasks looks like this:
+Registering the Grunt tasks looks like this:
 
 ```js
-grunt.registerAsyncTask('migrate:generate', '', function(done){
+grunt.registerTask('migrate:generate', '', function () {
+  var done = this.async();
   require('./tasks/db').runMigration('generate', grunt, done);
-})
+});
 
-grunt.registerAsyncTask('migrate:up', '', function(done){
+grunt.registerTask('migrate:up', '', function () {
+  var done = this.async();
   require('./tasks/db').runMigration('up', grunt, done);
-}
+});
 
-grunt.registerAsyncTask('migrate:down', '', function(done){
+grunt.registerTask('migrate:down', '', function () {
+  var done = this.async();
   require('./tasks/db').runMigration('down', grunt, done);
-}
+});
 ```
 
 To generate a migration file or to indicate a direction:
