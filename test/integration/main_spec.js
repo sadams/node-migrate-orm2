@@ -129,6 +129,31 @@ describe('node-migrate-orm2', function (done) {
         })
       });
 
+      describe('#addIndex', function() {
+
+        beforeEach(function(done){
+          task.mkdir(function(err, result){
+            fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+          });
+        });
+
+        it('runs one up migration successfully', function(done){
+          fs.writeFile(task.dir + '/002-add-one-index.js', index1Migration, function(err, result){
+            task.up(function(err, result){
+              conn.execQuery(
+                'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
+                ['name_idx'],
+                function (err, result) {
+                  should.equal(result[0].name, 'name_idx');
+                  done();
+                }
+              );
+            });
+          });
+        });
+
+      });
+
       describe('#addColumn', function() {
         beforeEach(function(done){
           task.mkdir(function(err, result){
@@ -258,6 +283,35 @@ describe('node-migrate-orm2', function (done) {
         })
       })
     });
+
+    describe('#dropIndex', function() {
+
+      beforeEach(function(done){
+        task.mkdir(function(err, result){
+          fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+        });
+      });
+
+      it('runs one down migration successfully', function(done){
+        fs.writeFile(task.dir + '/002-add-one-index.js', index1Migration, function(err, result){
+          task.up(function(err, result){
+            console.trace(err, result);
+            task.down(function(err, result){
+              console.trace(err, result);
+              conn.execQuery(
+                'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
+                ['name_idx'],
+                function (err, result) {
+                  result.should.be.empty;
+                  done();
+                }
+              );
+            });
+          });
+        });
+      });
+    });
+
   });
 
   describe('multi file migrations', function(done){
@@ -444,6 +498,16 @@ this.addColumn('table1', {                                     \n\
 };                                                             \n\
 exports.down = function(next){                                 \n\
   this.dropColumn('table1', 'malcolm', next);                  \n\
+};"
+
+var index1Migration = "exports.up = function (next) {          \n\
+this.addIndex('name_idx', {                                    \n\
+  table: 'table1',                                             \n\
+  columns: ['name']                                            \n\
+}, next);                                                      \n\
+};                                                             \n\
+exports.down = function(next){                                 \n\
+  this.dropIndex('name_idx', 'table1', next);                  \n\
 };"
 
 var column2Migration = "exports.up = function (next) {         \n\

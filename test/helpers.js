@@ -63,6 +63,9 @@ module.exports = {
       return cb(new Error(emsg));
     }
 
+    // leaving this here for debugging.
+    // orm.settings.set("connection.debug", true);
+
     orm.connect(config[protocol], function (err, connection) {
       if (err) return cb(err);
       cb(null, connection.driver);
