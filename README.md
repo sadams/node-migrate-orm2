@@ -225,12 +225,12 @@ ORM_PROTOCOL=mysql mocha test/integration
 
 ## Contributors
 
-Locomoters:
 * nicholasf
 * dxg
 * vaskas
 * benkitzelman
 * sidorares
+* wolfeidau
 
 This work is a melding of two underlying libraries:
 
