@@ -140,14 +140,26 @@ describe('node-migrate-orm2', function (done) {
         it('runs one up migration successfully', function(done){
           fs.writeFile(task.dir + '/002-add-one-index.js', index1Migration, function(err, result){
             task.up(function(err, result){
-              conn.execQuery(
-                'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
-                ['name_idx'],
-                function (err, result) {
-                  should.equal(result[0].name, 'name_idx');
-                  done();
-                }
-              );
+              if (conn.config.protocol === 'postgresql'){
+                conn.execQuery(
+                  'SELECT indexname FROM pg_indexes WHERE indexname = ?',
+                  ['name_idx'],
+                  function (err, result) {
+                    should.equal(result[0].indexname, 'name_idx');
+                    done();
+                  }
+                );
+              }
+              else{ //we say it's MySQL
+                conn.execQuery(
+                  'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
+                  ['name_idx'],
+                  function (err, result) {
+                    should.equal(result[0].name, 'name_idx');
+                    done();
+                  }
+                );
+              }
             });
           });
         });
@@ -295,17 +307,27 @@ describe('node-migrate-orm2', function (done) {
       it('runs one down migration successfully', function(done){
         fs.writeFile(task.dir + '/002-add-one-index.js', index1Migration, function(err, result){
           task.up(function(err, result){
-            console.trace(err, result);
             task.down(function(err, result){
-              console.trace(err, result);
-              conn.execQuery(
-                'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
-                ['name_idx'],
-                function (err, result) {
-                  result.should.be.empty;
-                  done();
-                }
-              );
+              if (conn.config.protocol === "postgresql"){
+                conn.execQuery(
+                  'SELECT indexname FROM pg_indexes WHERE indexname = ?',
+                  ['name_idx'],
+                  function (err, result) {
+                    result.should.be.empty;
+                    done();
+                  }
+                );
+              }
+              else {
+                conn.execQuery(
+                  'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
+                  ['name_idx'],
+                  function (err, result) {
+                    result.should.be.empty;
+                    done();
+                  }
+                );
+              }
             });
           });
         });
