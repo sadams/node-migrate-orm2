@@ -173,6 +173,20 @@ describe('node-migrate-orm2', function (done) {
           });
         });
 
+        it('runs one migration successfully', function(done){
+          fs.writeFile(task.dir + '/002-add-one-column.js', column1Migration, function(err, result){
+            task.up(function(err, result){
+              conn.execQuery(
+                'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
+                ['table1', 'malcolm'],
+                function (err, result) {
+                  should.equal(result[0].column_name, 'malcolm')
+                  done();
+                }
+              );
+            });
+          });
+        });
 
         it('runs two migrations successfully', function(done){
           fs.writeFile(task.dir + '/002-add-two-columns.js', column2Migration, function(err, result){
@@ -200,17 +214,11 @@ describe('node-migrate-orm2', function (done) {
           });
         });
 
-        it('runs one migration successfully', function(done){
-          fs.writeFile(task.dir + '/002-add-one-column.js', column1Migration, function(err, result){
-            task.up(function(err, result){
-              conn.execQuery(
-                'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
-                ['table1', 'malcolm'],
-                function (err, result) {
-                  should.equal(result[0].column_name, 'malcolm')
-                  done();
-                }
-              );
+        it("should fail to add the same column twice", function (done) {
+          fs.writeFile(task.dir + '/003-add-one-column-twice.js', addColumnTwiceMigration, function(err, result){
+            task.up(function (err, result) {
+              should.exist(err);
+              done()
             });
           });
         });
@@ -549,4 +557,20 @@ exports.down = function(next){                                 \n\
     if(err) { return next(err); }                              \n\
     that.dropColumn('table1', 'wobble', next);                 \n\
   });                                                          \n\
+};"
+
+var addColumnTwiceMigration = "                                \n\
+exports.up = function (next) {                                 \n\
+  var that = this;                                             \n\
+  this.addColumn('table1', {                                   \n\
+    answer: { type: 'text', required: true }                   \n\
+  }, function (err) {                                          \n\
+    if (err) return next(err);                                 \n\
+    that.addColumn('table1', {                                 \n\
+      answer: { type: 'text', required: true }                 \n\
+    }, next);                                                  \n\
+  });                                                          \n\
+};                                                             \n\
+exports.down = function (next) {                               \n\
+  this.dropColumn('table1', 'answer', next);                   \n\
 };"
