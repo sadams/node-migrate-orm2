@@ -503,10 +503,9 @@ this.createTable('table1', {                                  \n\
                                                               \n\
 exports.down = function (next){                               \n\
   this.dropTable('table1', next);                             \n\
-};                                                            \n\
-"
+};";
 
-var table2Migration = "\exports.up = function(next){          \n\
+var table2Migration = "exports.up = function(next){          \n\
 this.createTable('table2', {                             \n\
   id     : { type : \"number\", primary: true, serial: true },\n\
   int2   : { type : \"number\", size: 2 },                    \n\
@@ -519,7 +518,7 @@ this.createTable('table2', {                             \n\
                                                               \n\
 exports.down = function(next){                                \n\
   this.dropTable('table2', next);                             \n\
-};"
+};";
 
 var column1Migration = "exports.up = function (next) {         \n\
 this.addColumn('table1', {                                     \n\
@@ -528,7 +527,7 @@ this.addColumn('table1', {                                     \n\
 };                                                             \n\
 exports.down = function(next){                                 \n\
   this.dropColumn('table1', 'malcolm', next);                  \n\
-};"
+};";
 
 var index1Migration = "exports.up = function (next) {          \n\
 this.addIndex('name_idx', {                                    \n\
@@ -538,7 +537,7 @@ this.addIndex('name_idx', {                                    \n\
 };                                                             \n\
 exports.down = function(next){                                 \n\
   this.dropIndex('name_idx', 'table1', next);                  \n\
-};"
+};";
 
 var column2Migration = "exports.up = function (next) {         \n\
   var that = this;                                             \n\
