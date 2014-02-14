@@ -95,7 +95,9 @@ module.exports = {
         conn.execQuery('drop table ' + table, forgivingCB);
       }
 
-      async.each(tables, dropper, cb)
+      async.each(tables, dropper, function(err, result){
+        cb(err, result);
+      })
     });
   }
 };

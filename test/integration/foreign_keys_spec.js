@@ -4,15 +4,19 @@ var helpers = require('../helpers');
 var Task    = require('./../../');
 
 
-describe('node-migrate-orm2- foreign key DSL', function (done) {
+describe('foreign key DSL', function (done) {
   var task;
   var conn;
+
+  beforeEach(function(done){
+    helpers.cleanupDir('migrations', done);
+  });
 
   beforeEach(function (done) {
     helpers.connect(function (err, driver) {
       if (err) return done(err);
       conn = driver;
-      task = new Task(conn, { dir: 'foo/bar' });
+      task = new Task(conn, { dir: 'migrations' });
       done();
     });
   });
@@ -43,6 +47,7 @@ describe('node-migrate-orm2- foreign key DSL', function (done) {
           task.up('/003-add-foreign-key.js', function(err, result){
             if (conn.config.protocol === "postgresql"){
               conn.execQuery(pgListForeignKeys('table2'), function (err, result) {
+                console.log(result, " <<< ")
                 should.equal(result[0].foreign_table_name, 'table1');
                 should.equal(result[0].foreign_column_name, 'id');
                 should.not.exist(err);

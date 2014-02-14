@@ -8,12 +8,17 @@ describe('node-migrate-orm2', function (done) {
   var task;
   var conn;
 
+  beforeEach(function(done){
+    helpers.cleanupDir('migrations', done);
+  });
+
+
   beforeEach(function (done) {
     helpers.connect(function (err, driver) {
       if (err) return done(err);
 
       conn = driver;
-      task = new Task(conn, { dir: 'foo/bar' });
+      task = new Task(conn, { dir: 'migrations' });
 
       done();
     });
