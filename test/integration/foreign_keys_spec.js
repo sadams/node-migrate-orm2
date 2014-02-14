@@ -17,6 +17,12 @@ describe('node-migrate-orm2- foreign key DSL', function (done) {
     });
   });
 
+
+  afterEach(function (done) {
+    helpers.cleanupDbAndDir(conn, task.dir, ['table2', 'table1'], done);
+  });
+
+
   describe('foreign keys', function(done){
 
     beforeEach(function(done){
@@ -29,10 +35,6 @@ describe('node-migrate-orm2- foreign key DSL', function (done) {
           });
         })
       })
-    });
-
-    afterEach(function (done) {
-      helpers.cleanupDbAndDir(conn, task.dir, done);
     });
 
     it('adding one', function(done){

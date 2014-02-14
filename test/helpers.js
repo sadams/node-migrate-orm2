@@ -3,6 +3,7 @@ var path   = require('path');
 var orm    = require('orm');
 var rimraf = require('rimraf');
 var common = module.exports;
+var async  = require('async');
 
 
 var aliases = {
@@ -76,14 +77,25 @@ module.exports = {
     rimraf(path.join(process.cwd() ,folder), cb);
   },
 
-  cleanupDbAndDir: function (conn, folder, cb) {
+  cleanupDbAndDir: function (conn, folder, tables, cb) {
     rimraf(path.join(process.cwd(), folder), function(err, result) {
-      try {
-        conn.db.query('drop table orm_migrations', cb);
+
+      tables.reverse();
+      tables.push("orm_migrations");
+      tables.reverse();
+
+      var dropper = function(table, cb){
+        var forgivingCB = function(err, result){
+          if (err){
+            console.log("Error when dropping " + table)
+          }
+          cb(null, result);
+        }
+
+        conn.execQuery('drop table ' + table, forgivingCB);
       }
-      catch (err) {
-        cb(err);
-      };
+
+      async.each(tables, dropper, cb)
     });
   }
 };

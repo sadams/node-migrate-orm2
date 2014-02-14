@@ -17,6 +17,11 @@ describe('node-migrate-orm2- primary key DSL', function (done) {
     });
   });
 
+  afterEach(function (done) {
+    helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
+  });
+
+
   describe('adding a primary key', function(done){
 
     beforeEach(function(done){
@@ -27,10 +32,6 @@ describe('node-migrate-orm2- primary key DSL', function (done) {
           });
         })
       })
-    });
-
-    afterEach(function (done) {
-      helpers.cleanupDbAndDir(conn, task.dir, done);
     });
 
     it('adds a primary key', function(done){
@@ -82,32 +83,32 @@ describe('node-migrate-orm2- primary key DSL', function (done) {
   });
 });
 
-var table1Migration = "exports.up = function(next){           \n\
-this.createTable('table1', {                                  \n\
-  price  : { type : \"number\" },\n\
-}, next);                                                     \n\
-};                                                            \n\
-                                                              \n\
-exports.down = function(next){                                \n\
-  this.dropTable('table1', next);                             \n\
+var table1Migration = "exports.up = function(next){             \n\
+this.createTable('table1', {                                    \n\
+  price  : { type : \"number\" },                               \n\
+}, next);                                                       \n\
+};                                                              \n\
+                                                                \n\
+exports.down = function(next){                                  \n\
+  this.dropTable('table1', next);                               \n\
 };";
 
-var table1AddPrimaryKey = "exports.up = function(next){           \n\
-this.addPrimaryKey('table1', 'price', next);                  \n\
-};                                                            \n\
-                                                              \n\
-exports.down = function(next){                                \n\
-  this.dropPrimaryKey('table1', 'price', next);               \n\
+var table1AddPrimaryKey = "exports.up = function(next){         \n\
+this.addPrimaryKey('table1', 'price', next);                    \n\
+};                                                              \n\
+                                                                \n\
+exports.down = function(next){                                  \n\
+  this.dropPrimaryKey('table1', 'price', next);                 \n\
 };";
 
-var pgListPrimaryKeys1 =   "SELECT                                \n\
+var pgListPrimaryKeys1 =   "SELECT                              \n\
   pg_attribute.attname,                                         \n\
     format_type(pg_attribute.atttypid, pg_attribute.atttypmod)  \n\
   FROM pg_index, pg_class, pg_attribute                         \n\
   WHERE                                                         \n\
   pg_class.oid = '";
 
-var pgListPrimaryKeys2 =   "'::regclass AND                       \n\
+var pgListPrimaryKeys2 =   "'::regclass AND                     \n\
   indrelid = pg_class.oid AND                                   \n\
   pg_attribute.attrelid = pg_class.oid AND                      \n\
   pg_attribute.attnum = any(pg_index.indkey)                    \n\
@@ -115,5 +116,5 @@ var pgListPrimaryKeys2 =   "'::regclass AND                       \n\
 
 
 pgListPrimaryKeys = function(tableName){
-  return listPrimaryKeys1 + tableName + listPrimaryKeys2;
+  return pgListPrimaryKeys1 + tableName + pgListPrimaryKeys2;
 }

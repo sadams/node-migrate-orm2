@@ -80,7 +80,7 @@ describe('node-migrate-orm2', function (done) {
 
   describe('#up', function(done){
     afterEach(function (done) {
-      helpers.cleanupDbAndDir(conn, task.dir, done);
+      helpers.cleanupDbAndDir(conn, task.dir, ['table1', 'table2'], done);
     });
 
     it('creates the orm_migrations table', function(done){
@@ -99,7 +99,7 @@ describe('node-migrate-orm2', function (done) {
 
     describe('#up migrating', function(done){
       afterEach(function(done){
-        conn.execQuery('drop table table1;', done)
+        helpers.cleanupDbAndDir(conn, task.dir,['table1'], done);
       });
 
       it('runs a no arg up migrations successfully', function(done){
@@ -129,42 +129,6 @@ describe('node-migrate-orm2', function (done) {
         })
       });
 
-      describe('#addIndex', function() {
-
-        beforeEach(function(done){
-          task.mkdir(function(err, result){
-            fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
-          });
-        });
-
-        it('runs one up migration successfully', function(done){
-          fs.writeFile(task.dir + '/002-add-one-index.js', index1Migration, function(err, result){
-            task.up(function(err, result){
-              if (conn.config.protocol === 'postgresql'){
-                conn.execQuery(
-                  'SELECT indexname FROM pg_indexes WHERE indexname = ?',
-                  ['name_idx'],
-                  function (err, result) {
-                    should.equal(result[0].indexname, 'name_idx');
-                    done();
-                  }
-                );
-              }
-              else{ //we say it's MySQL
-                conn.execQuery(
-                  'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
-                  ['name_idx'],
-                  function (err, result) {
-                    should.equal(result[0].name, 'name_idx');
-                    done();
-                  }
-                );
-              }
-            });
-          });
-        });
-
-      });
 
       describe('#addColumn', function() {
         beforeEach(function(done){
@@ -213,23 +177,13 @@ describe('node-migrate-orm2', function (done) {
             });
           });
         });
-
-        it("should fail to add the same column twice", function (done) {
-          fs.writeFile(task.dir + '/003-add-one-column-twice.js', addColumnTwiceMigration, function(err, result){
-            task.up(function (err, result) {
-              should.exist(err);
-              done()
-            });
-          });
-        });
-
       });
     });
   });
 
   describe('#down', function(done){
     afterEach(function (done) {
-      helpers.cleanupDbAndDir(conn, task.dir, done);
+      helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
     });
 
     it('runs a no arg down migrations successfully', function(done){
@@ -303,45 +257,6 @@ describe('node-migrate-orm2', function (done) {
         })
       })
     });
-
-    describe('#dropIndex', function() {
-
-      beforeEach(function(done){
-        task.mkdir(function(err, result){
-          fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
-        });
-      });
-
-      it('runs one down migration successfully', function(done){
-        fs.writeFile(task.dir + '/002-add-one-index.js', index1Migration, function(err, result){
-          task.up(function(err, result){
-            task.down(function(err, result){
-              if (conn.config.protocol === "postgresql"){
-                conn.execQuery(
-                  'SELECT indexname FROM pg_indexes WHERE indexname = ?',
-                  ['name_idx'],
-                  function (err, result) {
-                    result.should.be.empty;
-                    done();
-                  }
-                );
-              }
-              else {
-                conn.execQuery(
-                  'SELECT name FROM information_schema.innodb_sys_indexes WHERE name = ?',
-                  ['name_idx'],
-                  function (err, result) {
-                    result.should.be.empty;
-                    done();
-                  }
-                );
-              }
-            });
-          });
-        });
-      });
-    });
-
   });
 
   describe('multi file migrations', function(done){
@@ -356,7 +271,7 @@ describe('node-migrate-orm2', function (done) {
     });
 
     afterEach(function (done) {
-      helpers.cleanupDbAndDir(conn, task.dir, done);
+      helpers.cleanupDbAndDir(conn, task.dir, ['table1', 'table2'], done);
     });
 
     it('migrates up', function(done){
@@ -437,11 +352,7 @@ describe('node-migrate-orm2', function (done) {
     });
 
     afterEach(function (done) {
-      helpers.cleanupDbAndDir(conn, task.dir, done);
-    });
-
-    afterEach(function(done){
-      conn.execQuery('drop table table1;', done)
+      helpers.cleanupDbAndDir(conn, task.dir, ['table1', 'table2'], done);
     });
 
     it('remembers', function(done){
@@ -470,7 +381,7 @@ describe('node-migrate-orm2', function (done) {
     });
 
     afterEach(function (done) {
-      helpers.cleanupDbAndDir(conn, task.dir, done);
+      helpers.cleanupDbAndDir(conn, task.dir,['table1', 'table2'], done);
     });
 
     it('remembers', function(done){
@@ -505,8 +416,8 @@ exports.down = function (next){                               \n\
   this.dropTable('table1', next);                             \n\
 };";
 
-var table2Migration = "exports.up = function(next){          \n\
-this.createTable('table2', {                             \n\
+var table2Migration = "exports.up = function(next){           \n\
+this.createTable('table2', {                                  \n\
   id     : { type : \"number\", primary: true, serial: true },\n\
   int2   : { type : \"number\", size: 2 },                    \n\
   int4   : { type : \"number\", size: 4 },                    \n\
@@ -529,16 +440,6 @@ exports.down = function(next){                                 \n\
   this.dropColumn('table1', 'malcolm', next);                  \n\
 };";
 
-var index1Migration = "exports.up = function (next) {          \n\
-this.addIndex('name_idx', {                                    \n\
-  table: 'table1',                                             \n\
-  columns: ['name']                                            \n\
-}, next);                                                      \n\
-};                                                             \n\
-exports.down = function(next){                                 \n\
-  this.dropIndex('name_idx', 'table1', next);                  \n\
-};";
-
 var column2Migration = "exports.up = function (next) {         \n\
   var that = this;                                             \n\
   this.addColumn('table1', {                                   \n\
@@ -556,20 +457,5 @@ exports.down = function(next){                                 \n\
     if(err) { return next(err); }                              \n\
     that.dropColumn('table1', 'wobble', next);                 \n\
   });                                                          \n\
-};"
+};";
 
-var addColumnTwiceMigration = "                                \n\
-exports.up = function (next) {                                 \n\
-  var that = this;                                             \n\
-  this.addColumn('table1', {                                   \n\
-    answer: { type: 'text', required: true }                   \n\
-  }, function (err) {                                          \n\
-    if (err) return next(err);                                 \n\
-    that.addColumn('table1', {                                 \n\
-      answer: { type: 'text', required: true }                 \n\
-    }, next);                                                  \n\
-  });                                                          \n\
-};                                                             \n\
-exports.down = function (next) {                               \n\
-  this.dropColumn('table1', 'answer', next);                   \n\
-};"
