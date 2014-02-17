@@ -132,6 +132,9 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
     cb();
   });
 
+  set.on('migration-error', function(err){
+    cb(err);
+  })
 
   var migrationPath = migrationName
     ? join(this.dir, migrationName)
