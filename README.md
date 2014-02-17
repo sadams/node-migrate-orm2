@@ -98,6 +98,8 @@ So, ```this``` supports the following operations:
 * addForeignKey
 * dropForeignKey
 
+These operations are depicted in the examples folder.
+
 We would like to add modifyColumn functionality in the future.
 
 ## Usage - up and down
