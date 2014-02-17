@@ -5,11 +5,11 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git://github.com/nicholasf/node-migrate-orm2.git"
+    "url": "git://github.com/locomote/node-migrate-orm2.git"
   },
   "author": "nicholasf, dxg, vaskas, benkitzelman, sidorares",
   "bugs": {
-    "url": "https://github.com/nicholasf/node-migrate-orm2/issues"
+    "url": "https://github.com/locomote/node-migrate-orm2/issues"
   },
   "homepage": "https://github.com/locomote/node-migrate-orm2",
   "scripts": {
