@@ -93,6 +93,10 @@ So, ```this``` supports the following operations:
 * dropColumn
 * addIndex
 * dropIndex
+* addPrimaryKey
+* dropPrimaryKey
+* addForeignKey
+* dropForeignKey
 
 We would like to add modifyColumn functionality in the future.
 
@@ -208,6 +212,10 @@ grunt migrate:up --file=001-create-users.js
 ```
 
 ## Running Tests
+
+Please note - running all of the tests together can produce database connection pooling problems. We are currently considering these.
+
+Tests work in isolation and when the database is tuned for a greater amount of database connections.
 
 Create `test/config.js` (see `test/config.example.js` for instructions)
 
