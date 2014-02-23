@@ -6,12 +6,12 @@ var join         = require('path').join
   , migrationDsl = require('./lib/migration-dsl');
 
 
-function MigrationTask(connection, opts){
+function MigrationTask(driver, opts){
   opts                  = (opts || {})
-  this.connection       = connection;
+  this.driver           = driver;
   this.dir              = (opts.dir || 'migrations');
   this.coffee           = (opts.coffee || false);
-  this.migrate          = migrationDsl(connection, this);
+  this.migrate          = migrationDsl(driver, this);
   this.resumptionPoint  = 0;
 }
 
