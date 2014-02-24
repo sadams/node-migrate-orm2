@@ -232,6 +232,11 @@ ORM_PROTOCOL=mysql node test/run
 ORM_PROTOCOL=mysql mocha test/integration
 ```
 
+## Guideline to Contributing
+
+Contributions are welcome. If you want to discuss or request a feature, please open an issue.
+
+We will ask for test coverage of all Pull Requests for most issues. Please see the current testing strategy in test/integration.
 
 ## Contributors
 
