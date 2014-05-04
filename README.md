@@ -162,6 +162,25 @@ The Task object can be modified to work from a different directory or to generat
 var task = new Task(connection, {dir: 'data/migrations', coffee: true});
 ```
 
+## Usage - orm-migrate
+
+See https://github.com/nicholasf/node-orm-migrate for a command line tool.
+
+```
+♪  node-orm-migrate git:(master) ✗ migrate --help
+
+  Usage: migrate [options]
+
+  Options:
+
+    -h, --help      output usage information
+    -V, --version   output the version number
+    -g, --generate  Generate a migration
+    -u, --up        Run up migrations
+    -d, --down      Run down migrations
+```
+
+
 ## Usage - grunt
 
 We handcraft grunt and our tasks looks this.
