@@ -1,4 +1,6 @@
 var _      = require('lodash');
+var fs     = require('fs');
+var util   = require('util');
 var path   = require('path');
 var orm    = require('orm');
 var rimraf = require('rimraf');
@@ -73,29 +75,34 @@ module.exports = {
     });
   },
 
+  writeMigration: function (task, name, code) {
+    var filePath = util.format(
+      "%s/%s/%s", path.normalize(path.join(__dirname, '..')), task.dir, name
+    );
+
+    // Because we have different migration files with the same path.
+    delete require.cache[filePath];
+
+    fs.writeFileSync(filePath, code);
+  },
+
   cleanupDir: function (folder, cb) {
     rimraf(path.join(process.cwd() ,folder), cb);
   },
 
   cleanupDbAndDir: function (conn, folder, tables, cb) {
     rimraf(path.join(process.cwd(), folder), function(err, result) {
+      if (err) return cb(err);
 
       tables.reverse();
       tables.push("orm_migrations");
       tables.reverse();
 
       var dropper = function(table, cb){
-        var forgivingCB = function(err, result){
-          if (err){
-            console.log("Error when dropping " + table)
-          }
-          cb(null, result);
-        }
-
-        conn.execQuery('drop table ' + table, forgivingCB);
+        conn.execQuery('DROP TABLE IF EXISTS ??', [table], cb);
       }
 
-      async.each(tables, dropper, function(err, result){
+      async.eachSeries(tables, dropper, function(err, result){
         cb(err, result);
       })
     });

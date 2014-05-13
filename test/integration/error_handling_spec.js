@@ -8,19 +8,22 @@ describe('handling errors doing migration runs', function (done) {
   var task;
   var conn;
 
-  beforeEach(function(done){
-    helpers.cleanupDir('migrations', done);
-  });
-
-  beforeEach(function (done) {
-    helpers.connect(function (err, driver) {
+  before(function (done) {
+    helpers.connect(function (err, connection) {
       if (err) return done(err);
 
-      conn = driver;
-      task = new Task(conn, { dir: 'migrations' });
-
+      conn = connection;
       done();
     });
+  });
+
+  after(function (done) {
+    conn.close(done);
+  });
+
+  beforeEach(function(done){
+    task = new Task(conn, { dir: 'migrations' });
+    helpers.cleanupDir('migrations', done);
   });
 
   afterEach(function (done) {
@@ -30,30 +33,30 @@ describe('handling errors doing migration runs', function (done) {
   describe('#addColumn', function() {
     beforeEach(function(done){
       task.mkdir(function(err, result){
-        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+        helpers.writeMigration(task, '001-create-table1.js',  table1Migration);
+        done();
       });
     });
 
     it("should throw an error if asked to add the same column twice", function (done) {
-      fs.writeFile(task.dir + '/003-add-one-column-twice.js', addColumnTwiceMigration, function(err, result){
-        task.up(function (err, result) {
-          should.exist(err);
-          done();
-        })
+      helpers.writeMigration(task, '003-add-one-column-twice.js',  addColumnTwiceMigration);
+      task.up(function (err, result) {
+        should.exist(err);
+        done();
       });
     });
   });
 });
 
-var table1Migration = "exports.up = function (next) {         \n\
-this.createTable('table1', {                                  \n\
-  id     : { type : \"number\", primary: true, serial: true },\n\
-  name   : { type : \"text\", required: true }                \n\
-}, next);                                                     \n\
-};                                                            \n\
-                                                              \n\
-exports.down = function (next){                               \n\
-  this.dropTable('table1', next);                             \n\
+var table1Migration = "exports.up = function (next) {          \n\
+this.createTable('table1', {                                   \n\
+  id     : { type : \"serial\", key: true },                   \n\
+  name   : { type : \"text\", required: true }                 \n\
+}, next);                                                      \n\
+};                                                             \n\
+                                                               \n\
+exports.down = function (next){                                \n\
+  this.dropTable('table1', next);                              \n\
 };";
 
 var addColumnTwiceMigration = "                                \n\

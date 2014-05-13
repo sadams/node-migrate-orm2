@@ -1,9 +1,9 @@
-var join         = require('path').join
-  , fs           = require('fs')
-  , mkdirp       = require('mkdirp')
-  , async        = require('async')
-  , _            = require('lodash')
-  , migrationDsl = require('./lib/migration-dsl');
+var path         = require('path');
+var fs           = require('fs');
+var mkdirp       = require('mkdirp');
+var async        = require('async');
+var _            = require('lodash');
+var migrationDsl = require('./lib/migration-dsl');
 
 
 function MigrationTask(driver, opts){
@@ -97,9 +97,9 @@ var coffeeTemplate = [
 
 function generate(name, extension, templateName) {
   template = ((extension === "js") ? jsTemplate : coffeeTemplate);
-  var path = name + '.' + extension;
-  log('create', join(this.process.cwd(), path));
-  fs.writeFileSync(path, template);
+  var filePath = name + '.' + extension;
+  log('create', path.join(this.process.cwd(), filePath));
+  fs.writeFileSync(filePath, template);
 }
 
 /**
@@ -116,9 +116,9 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
   }
 
   var self = this;
-  this.migrations().forEach(function(path){
-    var mod = require(process.cwd() + '/' + path);
-    self.migrate(path, mod.up, mod.down);
+  this.migrations().forEach(function (filePath) {
+    var mod = require(process.cwd() + '/' + filePath);
+    self.migrate(filePath, mod.up, mod.down);
   });
 
   var set = this.migrate();
@@ -137,7 +137,7 @@ MigrationTask.prototype.performMigration = function(direction, migrationName, cb
   })
 
   var migrationPath = migrationName
-    ? join(this.dir, migrationName)
+    ? path.join(this.dir, migrationName)
     : migrationName;
 
   set[direction](null, migrationPath);

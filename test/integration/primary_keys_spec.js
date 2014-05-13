@@ -1,40 +1,40 @@
 var should  = require('should');
-var fs      = require('fs');
 var helpers = require('../helpers');
 var Task    = require('./../../');
-
 
 describe('node-migrate-orm2- primary key DSL', function (done) {
   var task;
   var conn;
 
-  beforeEach(function(done){
-    helpers.cleanupDir('migrations', done);
-  });
-
-  beforeEach(function (done) {
-    helpers.connect(function (err, driver) {
+  before(function (done) {
+    helpers.connect(function (err, connection) {
       if (err) return done(err);
-      conn = driver;
-      task = new Task(conn, { dir: 'migrations' });
+
+      conn = connection;
       done();
     });
+  });
+
+  after(function (done) {
+    conn.close(done);
+  });
+
+  beforeEach(function(done){
+    task = new Task(conn, { dir: 'migrations' });
+    helpers.cleanupDir('migrations', done);
   });
 
   afterEach(function (done) {
     helpers.cleanupDbAndDir(conn, task.dir, ['table_primary_keys'], done);
   });
 
-
   describe('adding a primary key', function(done){
 
     beforeEach(function(done){
       task.mkdir(function(err, result){
-        fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-          fs.writeFile(task.dir + '/002-add-primary-key-table1.js', table1AddPrimaryKey, function(err, result){
-            done();
-          });
-        })
+        helpers.writeMigration(task, '001-create-table1.js',          table1Migration);
+        helpers.writeMigration(task, '002-add-primary-key-table1.js', table1AddPrimaryKey);
+        done();
       })
     });
 
@@ -94,15 +94,15 @@ this.createTable('table_primary_keys', {                        \n\
 };                                                              \n\
                                                                 \n\
 exports.down = function(next){                                  \n\
-  this.dropTable('table_primary_keys', next);                               \n\
+  this.dropTable('table_primary_keys', next);                   \n\
 };";
 
 var table1AddPrimaryKey = "exports.up = function(next){         \n\
-this.addPrimaryKey('table_primary_keys', 'price', next);                    \n\
+this.addPrimaryKey('table_primary_keys', 'price', next);        \n\
 };                                                              \n\
                                                                 \n\
 exports.down = function(next){                                  \n\
-  this.dropPrimaryKey('table_primary_keys', 'price', next);                 \n\
+  this.dropPrimaryKey('table_primary_keys', 'price', next);     \n\
 };";
 
 var pgListPrimaryKeys1 =   "SELECT                              \n\

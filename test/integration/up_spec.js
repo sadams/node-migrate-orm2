@@ -1,5 +1,4 @@
 var should  = require('should');
-var fs      = require('fs');
 var helpers = require('../helpers');
 var Task    = require('./../../');
 
@@ -7,20 +6,23 @@ describe('up', function (done) {
   var task;
   var conn;
 
-  //ensure the migration folder is cleared before each test
-  beforeEach(function(done){
-    helpers.cleanupDir('migrations', done);
-  });
-
-  beforeEach(function (done) {
-    helpers.connect(function (err, driver) {
+  before(function (done) {
+    helpers.connect(function (err, connection) {
       if (err) return done(err);
 
-      conn = driver;
-      task = new Task(conn, { dir: 'migrations' });
-
+      conn = connection;
       done();
     });
+  });
+
+  after(function (done) {
+    conn.close(done);
+  });
+
+  //ensure the migration folder is cleared before each test
+  beforeEach(function(done){
+    task = new Task(conn, { dir: 'migrations' });
+    helpers.cleanupDir('migrations', done);
   });
 
   describe('create the orm_migrations table', function(done){
@@ -29,16 +31,17 @@ describe('up', function (done) {
     });
 
     it('creates the orm_migrations table', function(done){
-      fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-        task.up(
-          function(err, result){
-            should.not.exist(err);
+      task.mkdir(function (err, result) {
+        should.not.exist(err);
+        helpers.writeMigration(task, '001-create-table1.js', table1Migration);
+        task.up(function (err, result) {
+          should.not.exist(err);
 
-            conn.execQuery('SELECT count(*) FROM ??', ['orm_migrations'], function(err, result){
-              should.not.exist(err);
-              done();
-            });
+          conn.execQuery('SELECT count(*) FROM ??', ['orm_migrations'], function(err, result){
+            should.not.exist(err);
+            done();
           });
+        });
       });
     });
 
@@ -49,7 +52,8 @@ describe('up', function (done) {
 
       beforeEach(function(done){
         task.mkdir(function(err, result){
-          fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, done);
+          helpers.writeMigration(task, '001-create-table1.js', table1Migration);
+          done();
         });
       });
 
@@ -77,43 +81,41 @@ describe('up', function (done) {
       });
 
       it('runs two migrations successfully', function(done){
-        fs.writeFile(task.dir + '/002-add-two-columns.js', column2Migration, function(err, result){
-          task.up(function(err, result){
+        helpers.writeMigration(task, '002-add-two-columns.js', column2Migration);
+        task.up(function(err, result){
+          conn.execQuery(
+            'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
+            ['table1', 'wobble'],
+            function (err, result) {
+              if (err) return done(err);
 
-            conn.execQuery(
-              'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
-              ['table1', 'wobble'],
-              function (err, result) {
-                if (err) return done(err);
+              should.equal(result[0].column_name, 'wobble');
 
-                should.equal(result[0].column_name, 'wobble');
-
-                conn.execQuery(
-                  'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
-                  ['table1', 'wibble'],
-                  function (err, result) {
-                    should.equal(result[0].column_name, 'wibble');
-                    done();
-                  }
-                );
-              }
-            );
-          });
+              conn.execQuery(
+                'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
+                ['table1', 'wibble'],
+                function (err, result) {
+                  should.equal(result[0].column_name, 'wibble');
+                  done();
+                }
+              );
+            }
+          );
         });
       });
     });
   });
 });
 
-var table1Migration = "exports.up = function (next) {         \n\
-this.createTable('table1', {                                  \n\
-  id     : { type : \"number\", primary: true, serial: true },\n\
-  name   : { type : \"text\", required: true }                \n\
-}, next);                                                     \n\
-};                                                            \n\
-                                                              \n\
-exports.down = function (next){                               \n\
-  this.dropTable('table1', next);                             \n\
+var table1Migration = "exports.up = function (next) {          \n\
+this.createTable('table1', {                                   \n\
+  id     : { type : \"integer\", key: true },                  \n\
+  name   : { type : \"text\", required: true }                 \n\
+}, next);                                                      \n\
+};                                                             \n\
+                                                               \n\
+exports.down = function (next){                                \n\
+  this.dropTable('table1', next);                              \n\
 };";
 
 var column2Migration = "exports.up = function (next) {         \n\

@@ -3,25 +3,27 @@ var fs      = require('fs');
 var helpers = require('../helpers');
 var Task    = require('./../../');
 
-
 describe('mkdir (initializes the migrations folder)', function (done) {
   var task;
   var conn;
 
-  //ensure the migration folder is cleared before each test
-  beforeEach(function(done){
-    helpers.cleanupDir('migrations', done);
-  });
-
-  beforeEach(function (done) {
-    helpers.connect(function (err, driver) {
+  before(function (done) {
+    helpers.connect(function (err, connection) {
       if (err) return done(err);
 
-      conn = driver;
-      task = new Task(conn, { dir: 'migrations' });
-
+      conn = connection;
       done();
     });
+  });
+
+  after(function (done) {
+    conn.close(done);
+  });
+
+  //ensure the migration folder is cleared before each test
+  beforeEach(function(done){
+    task = new Task(conn, { dir: 'migrations' });
+    helpers.cleanupDir('migrations', done);
   });
 
   describe('#mkdir', function(done){

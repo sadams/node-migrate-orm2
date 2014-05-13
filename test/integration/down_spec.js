@@ -1,5 +1,4 @@
 var should  = require('should');
-var fs      = require('fs');
 var helpers = require('../helpers');
 var Task    = require('./../../');
 
@@ -7,20 +6,26 @@ describe('down', function (done) {
   var task;
   var conn;
 
+  before(function (done) {
+    helpers.connect(function (err, connection) {
+      if (err) return done(err);
+
+      conn = connection;
+      done();
+    });
+  });
+
+  after(function (done) {
+    conn.close(done);
+  });
+
   //ensure the migration folder is cleared before each test
   beforeEach(function(done){
     helpers.cleanupDir('migrations', done);
   });
 
-  beforeEach(function (done) {
-    helpers.connect(function (err, driver) {
-      if (err) return done(err);
-
-      conn = driver;
-      task = new Task(conn, { dir: 'migrations' });
-
-      done();
-    });
+  beforeEach(function () {
+    task = new Task(conn, { dir: 'migrations' });
   });
 
   afterEach(function (done) {
@@ -41,23 +46,22 @@ describe('down', function (done) {
     }
 
     task.mkdir(function(err, result){
-      fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-        task.up(function(err, result){
-          conn.execQuery('SELECT * FROM orm_migrations', function(err, result){
-            should.equal(result.length, 1);
-            should.equal(result[0].direction, 'up');
+      helpers.writeMigration(task, '001-create-table1.js',  table1Migration);
+      task.up(function(err, result){
+        conn.execQuery('SELECT * FROM orm_migrations', function(err, result){
+          should.equal(result.length, 1);
+          should.equal(result[0].direction, 'up');
 
-            conn.execQuery(
-              'SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ? and table_schema = ?',
-              ['table1', 'test'],
-              function (err, result) {
-                should.equal(result.length, 1);
-                down(null, done);
-              }
-            );
-          });
-        })
-      })
+          conn.execQuery(
+            'SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ? and table_schema = ?',
+            ['table1', 'test'],
+            function (err, result) {
+              should.equal(result.length, 1);
+              down(null, done);
+            }
+          );
+        });
+      });
     })
   });
 
@@ -78,24 +82,23 @@ describe('down', function (done) {
       })
     }
 
-    task.mkdir(function(err, result){
-      fs.writeFile(task.dir + '/001-create-table1.js', table1Migration, function(err, result){
-        task.up(function(err, result){
-          conn.execQuery('SELECT * FROM orm_migrations', function(err, result){
-            should.equal(result.length, 1);
-            should.equal(result[0].direction, 'up')
+    task.mkdir(function (err, result) {
+      helpers.writeMigration(task, '001-create-table1.js', table1Migration);
+      task.up(function(err, result){
+        conn.execQuery('SELECT * FROM orm_migrations', function(err, result){
+          should.equal(result.length, 1);
+          should.equal(result[0].direction, 'up')
 
-            conn.execQuery(
-              'SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ?',
-              ['table1'],
-              function (err, result) {
-                should.equal(result.length, 1);
-                down(null, done);
-              }
-            );
-          });
-        })
-      })
+          conn.execQuery(
+            'SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ?',
+            ['table1'],
+            function (err, result) {
+              should.equal(result.length, 1);
+              down(null, done);
+            }
+          );
+        });
+      });
     })
   });
 });
@@ -103,7 +106,7 @@ describe('down', function (done) {
 
 var table1Migration = "exports.up = function (next) {         \n\
 this.createTable('table1', {                                  \n\
-  id     : { type : \"number\", primary: true, serial: true },\n\
+  id     : { type : \"serial\", key: true },                  \n\
   name   : { type : \"text\", required: true }                \n\
 }, next);                                                     \n\
 };                                                            \n\
