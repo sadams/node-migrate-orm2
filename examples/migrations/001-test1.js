@@ -1,6 +1,6 @@
 exports.up = function (next) {
   this.createTable('test_table', {
-    id     : { type : "number", primary: true, serial: true },
+    id     : { type : "serial", key: true },
     name   : { type : "text", required: true }
   }, next);
 };
