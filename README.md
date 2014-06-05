@@ -45,7 +45,7 @@ A simple example, taken from the tests:
 ```js
 exports.up = function (next) {
   this.createTable('test_table', {
-    id     : { type : "number", key: true, serial: true },
+    id     : { type : "serial", key: true },
     name   : { type : "text", required: true }
   }, next);
 };
