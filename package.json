@@ -1,6 +1,6 @@
 {
   "name": "migrate-orm2",
-  "version": "1.2.11",
+  "version": "1.2.12",
   "description": "A library providing migrations using ORM2's model DSL leveraging Visionmedia's node-migrate.",
   "main": "index.js",
   "repository": {
