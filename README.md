@@ -33,7 +33,6 @@ A Task object offers three operations - *generate*, *up* and *down*.
 ```
 > task.generate('create-users', function(err, result){});
 >   create : /Users/nicholasf/code/locomote/node-migrate-orm2/migrations/001-create-users.js
-
 ```
 
 The 'migrations' folder is the default but can be overridden in the opts argument (see 'Usage - opts' below).
@@ -53,14 +52,13 @@ exports.up = function (next) {
 exports.down = function (next){
   this.dropTable('test_table', next);
 };
-
 ```
 
 Another example for adding or dropping a column:
 
 ```js
 exports.up = function(next){
-  this.addColumn('agency', preferredProviders: {type: "text", defaultValue: '1G', required: true}, next);
+  this.addColumn('agency', preferredProvider: {type: "text", defaultValue: '1G', required: true}, next);
 }
 
 exports.down = function(next){
@@ -78,14 +76,25 @@ exports.up = function (next) {
     unique: true
   }, next);
 };
-```
 
 exports.down = function (next) {
   this.dropIndex('agency_email_idx', 'agency', next);
 };
+```
 
+There are no built-in operations for inserting, updating, or deleting row data contained in tables. The ```execQuery``` operation, which can be used to execute any custom queries, can however be used to perform such actions:
 
-So, ```this``` supports the following operations:
+```js
+exports.up = function (next) {
+  this.execQuery('INSERT INTO agency (email) VALUES (?)', ['info@example.com'], next);
+};
+
+exports.down = function (next) {
+  this.execQuery('DELETE FROM agency WHERE email = ?', ['info@example.com'], next);
+};
+```
+
+The full list of operations available through ```this```:
 
 * createTable
 * dropTable
@@ -97,6 +106,7 @@ So, ```this``` supports the following operations:
 * dropPrimaryKey
 * addForeignKey
 * dropForeignKey
+* execQuery
 
 These operations are depicted in the examples folder.
 
@@ -149,7 +159,6 @@ mysql> select * from orm_migrations;
 | 001-create-users.js | down      | 2013-12-15T23:10:04.023Z |
 +---------------------+-----------+--------------------------+
 3 rows in set (0.00 sec)
-
 ```
 
 This reflects the history above.
@@ -270,4 +279,3 @@ This work is a melding of two underlying libraries:
 
 * [node-migrate](https://github.com/visionmedia/node-migrate) from @visionmedia (TJ)
 * [node-sql-ddl-sync](https://github.com/dresende/node-sql-ddl-sync) from @dresende
-
