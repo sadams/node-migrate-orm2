@@ -20,7 +20,7 @@ var MigrateTask = require('migrate-orm2');
 
 orm.connect(connectionString, function (err, connection) {
   if (err) throw err;
-  var task = new Task(connection.driver);
+  var task = new MigrateTask(connection.driver);
 });
 ```
 
