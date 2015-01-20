@@ -35,7 +35,15 @@ MigrationTask.prototype.migrations = function() {
     else {
       return file.match(/^\d+.*\.js$/);
     }
-  }).sort().map(function(file){
+  }).sort(function(a, b){
+    a = parseInt(a.match(/^(\d+)/)[1], 10);
+    b = parseInt(b.match(/^(\d+)/)[1], 10);
+    if (a == b) {
+      log('ERROR', 'duplicate migration index: '+a);
+      throw('duplicate migration index');
+    }
+    return a - b;
+  }).map(function(file){
     return self.dir + '/' + file;
   });
 }
