@@ -1,3 +1,6 @@
+### v1.2.13
+- Add missing 'var' declarations (#18)
+
 ### v1.2.11 - 14 May 2014
 - Fix sqlite create table duplicate primary key (#13, #14)
 - Update examples
