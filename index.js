@@ -27,7 +27,7 @@ MigrationTask.prototype.mkdir = function(done) {
  */
 
 MigrationTask.prototype.migrations = function() {
-  self = this;
+  var self = this;
   return fs.readdirSync(this.dir).filter(function(file){
     if (self.coffee) {
       return file.match(/^\d+.*\.coffee$/);
@@ -96,7 +96,7 @@ var coffeeTemplate = [
  */
 
 function generate(name, extension, templateName) {
-  template = ((extension === "js") ? jsTemplate : coffeeTemplate);
+  var template = ((extension === "js") ? jsTemplate : coffeeTemplate);
   var filePath = name + '.' + extension;
   log('create', path.join(this.process.cwd(), filePath));
   fs.writeFileSync(filePath, template);
