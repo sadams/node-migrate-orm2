@@ -1,3 +1,6 @@
+### v1.2.14
+- Add custom types support
+
 ### v1.2.13
 - Add missing 'var' declarations (#18)
 
