@@ -136,4 +136,3 @@ exports.down = function(next){                                 \n\
     that.dropColumn('table1', 'wobble', next);                 \n\
   });                                                          \n\
 };";
-

@@ -81,7 +81,7 @@ var jsTemplate = [
 
 var coffeeTemplate = [
   ''
-  , 'exports.up = (next) -> '
+  , 'exports.up = (next) ->'
   , '  next()'
   , ''
   , 'exports.down = (next) ->'
@@ -175,7 +175,7 @@ MigrationTask.prototype.down =  function(migrationName, cb){
   })
 }
 
-  /**
+/**
  * create [title]
  */
 
@@ -198,5 +198,12 @@ MigrationTask.prototype.generate = function(title, cb){
   })
 }
 
-module.exports = MigrationTask;
+/**
+ * ensure the migration table is created ( and is v2 compliant )
+ */
+MigrationTask.prototype.ensureMigrationsTable = function(cb){
+  this.migrate.ensureMigrationsTable(cb);
+}
 
+
+module.exports = MigrationTask;

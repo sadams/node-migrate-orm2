@@ -90,21 +90,21 @@ module.exports = {
     rimraf(path.join(process.cwd() ,folder), cb);
   },
 
+  cleanupDb: function (conn, tables, cb) {
+    tables.reverse();
+    tables.push("orm_migrations");
+    tables.reverse();
+
+    var dropper = function(table, cb) {
+      conn.execQuery('DROP TABLE IF EXISTS ??', [table], cb);
+    }
+    async.eachSeries(tables, dropper, cb);
+  },
+
   cleanupDbAndDir: function (conn, folder, tables, cb) {
-    rimraf(path.join(process.cwd(), folder), function(err, result) {
-      if (err) return cb(err);
-
-      tables.reverse();
-      tables.push("orm_migrations");
-      tables.reverse();
-
-      var dropper = function(table, cb){
-        conn.execQuery('DROP TABLE IF EXISTS ??', [table], cb);
-      }
-
-      async.eachSeries(tables, dropper, function(err, result){
-        cb(err, result);
-      })
-    });
+    async.series([
+      this.cleanupDir.bind(this, folder),
+      this.cleanupDb.bind(this, conn, tables)
+    ], cb);
   }
 };
