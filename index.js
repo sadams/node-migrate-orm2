@@ -4,6 +4,7 @@ var mkdirp       = require('mkdirp');
 var async        = require('async');
 var _            = require('lodash');
 var migrationDsl = require('./lib/migration-dsl');
+var Migration    = require('./lib/migration')
 
 
 function MigrationTask(driver, opts){
@@ -12,6 +13,7 @@ function MigrationTask(driver, opts){
   this.dir              = (opts.dir || 'migrations');
   this.coffee           = (opts.coffee || false);
   this.migrate          = migrationDsl(driver, this);
+  this.migration        = new Migration(this.migrate.dsl, log);
   this.resumptionPoint  = 0;
 }
 
@@ -202,7 +204,7 @@ MigrationTask.prototype.generate = function(title, cb){
  * ensure the migration table is created ( and is v2 compliant )
  */
 MigrationTask.prototype.ensureMigrationsTable = function(cb){
-  this.migrate.ensureMigrationsTable(cb);
+  this.migration.ensureMigrationsTable(cb);
 }
 
 
