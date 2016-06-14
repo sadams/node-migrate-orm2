@@ -2,11 +2,10 @@ var should    = require('should');
 var _         = require('lodash');
 var async     = require('async');
 
-var helpers   = require('../helpers');
-var Task      = require('../../');
-var Migrate   = require('../../lib/migration-dsl');
-var Migration = require('../../lib/migration');
-
+var helpers      = require('../helpers');
+var Task         = require('../../');
+var Migration    = require('../../lib/migration');
+var MigrationDSL = require('../../lib/migration-dsl');
 
 var data = ['001-create-pets.js', '002-create-cats.js'];
 
@@ -55,14 +54,12 @@ var v1Datas = [
 ];
 
 describe('Migration', function () {
-  var task;
   var conn;
   var dsl;
   var migration;
 
   var createTable = function(done) {
-    dsl.dropTable('orm_migrations', function(err) {
-      if (err) return done(err);
+    dsl.dropTable('orm_migrations', function() {
       migration.ensureMigrationsTable(done);
     });
   };
@@ -80,8 +77,7 @@ describe('Migration', function () {
   };
 
   var createV1Table = function(done) {
-    dsl.dropTable('orm_migrations', function(err) {
-      if (err) return done(err);
+    dsl.dropTable('orm_migrations', function() {
       dsl.createTable('orm_migrations', tableV1, done);
     });
   };
@@ -99,8 +95,7 @@ describe('Migration', function () {
     helpers.connect(function (err, connection) {
       if (err) return done(err);
       conn = connection;
-      task = new Task(conn, { dir: 'migrations' });
-      dsl = Migrate(conn, task).dsl;
+      dsl = new MigrationDSL(conn);
       migration = new Migration(dsl);
       done();
     });
@@ -134,10 +129,10 @@ describe('Migration', function () {
     });
   });
 
-  describe('#add', function() {
+  describe('#save', function() {
     before(function(done) {
       reload(function() {
-        migration.add('003-create-dogs.js', done);
+        migration.save('003-create-dogs.js', done);
       });
     });
 
