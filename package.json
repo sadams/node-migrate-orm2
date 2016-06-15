@@ -1,13 +1,13 @@
 {
   "name": "migrate-orm2",
-  "version": "1.2.14",
+  "version": "2.0.0",
   "description": "A library providing migrations using ORM2's model DSL leveraging Visionmedia's node-migrate.",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/locomote/node-migrate-orm2.git"
   },
-  "author": "nicholasf, dxg, vaskas, benkitzelman, sidorares",
+  "author": "nicholasf, dxg, vaskas, benkitzelman, sidorares, damsonn",
   "bugs": {
     "url": "https://github.com/locomote/node-migrate-orm2/issues"
   },
@@ -22,7 +22,7 @@
     "mkdirp": "~0.5.1"
   },
   "devDependencies": {
-    "mocha": "~2.5.3",
+    "mocha": "~1.15.1",
     "mysql": "~2.11.1",
     "orm": "3.1.0",
     "pg": "~4.5.6",
