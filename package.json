@@ -17,17 +17,17 @@
   },
   "dependencies": {
     "sql-ddl-sync": "git://github.com/dresende/node-sql-ddl-sync.git#v0.3.11",
-    "migrate": "~0.2.2",
     "lodash": "~4.13.1",
     "async": "~1.5.2",
     "mkdirp": "~0.5.1"
   },
   "devDependencies": {
-    "should": "~3.3.1",
     "mocha": "~2.5.3",
-    "rimraf": "~2.2.5",
-    "orm": "3.1.0",
     "mysql": "~2.11.1",
-    "pg": "~4.5.6"
+    "orm": "3.1.0",
+    "pg": "~4.5.6",
+    "rimraf": "~2.2.5",
+    "should": "~3.3.1",
+    "sinon": "^1.17.4"
   }
 }

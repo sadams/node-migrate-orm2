@@ -1,21 +1,59 @@
-var should  = require('should');
-var helpers = require('../helpers');
-var Task    = require('./../../');
+var should     = require('should');
+var sinon      = require('sinon');
+var async      = require('async');
+var _          = require('lodash');
+var fs         = require('fs');
+var path       = require('path');
+var helpers    = require('../helpers');
+var Task       = require('./../../');
 
-describe('Migrator', function(done) {
+describe('Migrator', function() {
   var task;
   var conn;
+  var cwd;
 
-  before(function (done) {
+  var SELECT_MIGRATIONS = 'SELECT * FROM orm_migrations';
+  var hasMigrations = function(count, cb) {
+    conn.execQuery(SELECT_MIGRATIONS, function(err, migrations) {
+      should.not.exist(err);
+      migrations.should.have.length(count);
+      cb();
+    });
+  };
+  var SELECT_COLUMN = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name = ?';
+  var hasColumn = function(table, column, cb) {
+    conn.execQuery(SELECT_COLUMN, [table, column], function(err, columns) {
+      should.not.exist(err);
+      columns.should.have.length(1);
+      cb();
+    });
+  };
+  var SELECT_TABLE = 'SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ?';
+  var hasTable = function(table, cb) {
+    conn.execQuery(SELECT_TABLE, [table], function(err, tables) {
+      should.not.exist(err);
+      tables.should.have.length(1);
+      cb();
+    });
+  };
+  var hasNoTable = function(table, cb) {
+    conn.execQuery(SELECT_TABLE, [table], function(err, tables) {
+      should.not.exist(err);
+      tables.should.have.length(0);
+      cb();
+    });
+  }
+
+  before(function(done) {
     helpers.connect(function(err, connection) {
       if (err) return done(err);
-
       conn = connection;
+      cwd = this.process.cwd();
       done();
     });
   });
 
-  after(function (done) {
+  after(function(done) {
     helpers.cleanupDir('migrations', function() {
       conn.close(done);
     });
@@ -34,98 +72,135 @@ describe('Migrator', function(done) {
     });
   });
 
-  describe('#up', function(done) {
+  describe('#up', function() {
     it('runs a no arg up migrations successfully', function(done) {
       task.up(function(err, result) {
-        conn.execQuery('SELECT count(*) FROM ??', ['orm_migrations'], function(err, result) {
-          should.equal(result[0]['count'] || result[0]['count(*)'], 2);
-          done();
-        });
+        hasMigrations(2, done);
       })
     });
 
     it('runs a specific up migration successfully', function(done) {
       task.up('001-create-table1.js', function(err, result) {
-        conn.execQuery('SELECT count(*) FROM ??', ['orm_migrations'], function(err, result) {
-          should.equal(result[0]['count'] || result[0]['count(*)'], 1);
-          done();
-        });
+        hasMigrations(1, done);
       })
     });
 
     it('runs two migrations successfully', function(done) {
-      task.up(function(err, result){
-        conn.execQuery(
-          'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
-          ['table1', 'wobble'],
-          function (err, result) {
-            if (err) return done(err);
-
-            should.equal(result[0].column_name, 'wobble');
-
-            conn.execQuery(
-              'SELECT column_name FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name LIKE ?',
-              ['table1', 'wibble'],
-              function (err, result) {
-                should.equal(result[0].column_name, 'wibble');
-                done();
-              }
-            );
-          }
-        );
-      });
+      async.series([
+        task.up.bind(task),
+        _.partial(hasColumn, 'table1', 'wobble'),
+        _.partial(hasColumn, 'table1', 'wibble')
+      ], done);
     });
 
     it('doesnt re perform existing migration', function(done) {
-      task.up('001-create-table1.js', function(err, result) {
-        should.not.exist(err);
-        task.up(function(err, result) {
-          should.not.exist(err);
-          conn.execQuery('SELECT count(*) FROM ??', ['orm_migrations'], function(err, result) {
-            should.equal(result[0]['count'] || result[0]['count(*)'], 2);
-            done();
-          });
-        });
+      async.series([
+        task.up.bind(task, '001-create-table1.js'),
+        _.partial(hasMigrations, 1),
+        task.up.bind(task),
+        _.partial(hasMigrations, 2)
+      ], done);
+    });
+  });
+
+  describe('#down', function() {
+    it('runs a no arg down migrations successfully (one step)', function(done) {
+      async.series([
+        task.up.bind(task),
+        _.partial(hasMigrations, 2),
+        task.down.bind(task),
+        _.partial(hasMigrations, 1)
+      ], done);
+    });
+
+    it('runs down migrations using name (including)', function(done) {
+      async.series([
+        task.up.bind(task),
+        _.partial(hasMigrations, 2),
+        task.down.bind(task, '001-create-table1.js'),
+        _.partial(hasMigrations, 0),
+        _.partial(hasNoTable, 'table1')
+      ], done);
+    });
+  });
+
+  describe('#up and #down combinations', function() {
+    it('works with [up(no args), down(no args - one step), up(no args)]', function(done) {
+      async.series([
+        task.up.bind(task),
+        _.partial(hasMigrations, 2),
+        task.down.bind(task),
+        _.partial(hasMigrations, 1),
+        task.up.bind(task),
+        _.partial(hasMigrations, 2)
+      ], done);
+    });
+
+    it('works with [up(with args - one step), down(no args - one step), up(no args)]', function(done) {
+      async.series([
+        task.up.bind(task, '001-create-table1.js'),
+        _.partial(hasMigrations, 1),
+        task.down.bind(task),
+        _.partial(hasMigrations, 0),
+        task.up.bind(task),
+        _.partial(hasMigrations, 2)
+      ], done);
+    });
+
+    it('works with [up(with args - one step), up(with args - one step), down(with args - two steps)]', function(done) {
+      async.series([
+        task.up.bind(task, '001-create-table1.js'),
+        _.partial(hasMigrations, 1),
+        task.up.bind(task, '002-create-table1.js'),
+        _.partial(hasMigrations, 2),
+        task.down.bind(task, '001-create-table1.js'),
+        _.partial(hasMigrations, 0)
+      ], done);
+    });
+  });
+
+  describe('#generate', function() {
+    it('generates a migration', function(done) {
+      task.generate('test1', function(err, filename) {
+        var filePath = path.join(cwd, task.dir, filename + '.js');
+        fs.statSync(filePath).isFile().should.be.true;
+        done();
+      });
+    });
+
+    it('generates a coffee migration', function(done) {
+      task = new Task(conn, {coffee: true});
+      task.generate('test1', function(err, filename) {
+        var filePath = path.join(cwd, task.dir, filename + '.coffee');
+        fs.statSync(filePath).isFile().should.be.true;
+        done();
       });
     });
   });
 
-  describe('#down', function(done) {
-    it('runs a no arg down migrations successfully (one step)', function(done) {
-      task.up(function(err, result) {
-        conn.execQuery('SELECT * FROM orm_migrations', function(err, result) {
-          should.equal(result.length, 2);
-          task.down(function(err, result) {
-            should.not.exist(err);
-            conn.execQuery('SELECT * FROM orm_migrations', function(err, result) {
-              should.not.exist(err);
-              should.equal(result.length, 1);
-              done();
-            });
-          });
-        });
-      });
+  describe('#setup', function(done) {
+    beforeEach(function() {
+      sinon.spy(task, 'setup');
     });
-    it('runs down migrations using name (including)', function(done){
-      task.up(function(err, result) {
-        conn.execQuery('SELECT * FROM orm_migrations', function(err, result) {
-          should.equal(result.length, 2);
-          task.down('001-create-table1.js', function(err, result) { // revert 002 then 001
-            should.not.exist(err);
-            conn.execQuery('SELECT * FROM orm_migrations', function(err, result) {
-              should.not.exist(err);
-              should.equal(result.length, 0); // no recorded migrations
-              conn.execQuery(
-                'SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ?',
-                ['table1'],
-                function (err, result) {
-                  should.equal(result[0]['count'] || result[0]['count(*)'], 0); // no table1 exist
-                  done();
-                }
-              );
-            });
-          });
-        });
+
+    afterEach(function() {
+      task.setup.restore();
+    });
+
+    it('creates the migrtion folder', function(done) {
+      var dirPath = path.join(cwd, task.dir);
+      fs.statSync(dirPath).isDirectory().should.be.true;
+      done();
+    });
+
+    it('create the migrations table', function(done) {
+      hasTable('orm_migrations', done);
+    });
+
+    it('gets called when calling #up', function(done) {
+      task.up(function() {
+        task.setup.called.should.be.true;
+        done();
       });
     });
   });

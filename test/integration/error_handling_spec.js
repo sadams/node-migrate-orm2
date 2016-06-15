@@ -23,11 +23,11 @@ describe('handling errors doing migration runs', function (done) {
 
   beforeEach(function(done){
     task = new Task(conn, { dir: 'migrations' });
-    helpers.cleanupDir('migrations', done);
+    helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
   });
 
   afterEach(function (done) {
-    helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
+    helpers.cleanupDir('migrations', done);
   });
 
   describe('#addColumn', function() {
