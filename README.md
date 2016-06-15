@@ -2,6 +2,8 @@
 
 Migrations using [ORM2's](https://github.com/dresende/node-orm2) model DSL leveraging Visionmedia's node-migrate.
 
+Heads up ! v2 introduce some major changes, make sure you check the [changelog](Changelog.md)
+
 ## Installation
 
 ```
@@ -112,8 +114,7 @@ These operations are depicted in the examples folder.
 
 We would like to add modifyColumn functionality in the future.
 
-## Usage - up and down
-
+## Usage - up
 ```
 > task.up(function(e,r){});
 >   up : migrations/001-create-users.js
@@ -133,11 +134,7 @@ Alternatively, when there are many migrations, a filename can be specified:
 
 This means 'run up to this migration then execute its up function, then stop.'
 
-## Usage - the orm_migrations table
-
-Migrate-orm2 maintains an internal orm_migrations table which allows it to run from previous state.
-
-Proceeding from the example immediately above:
+## Usage - down
 
 ```
 > task.down(function(e,r){});
@@ -145,23 +142,33 @@ Proceeding from the example immediately above:
   migration : complete
 ```
 
-Although there are two migration files, the up function reads from orm_migrations to find its current point. It then works out to call the down function of 001-create-users.js instead of 002-create-servers.js.
+This means 'rollback the last migration'.
 
-The orm_migrations table can be used to represent the history of migrations.
+If there are many migrations to rollback a limit can be specified.
+
+```
+> task.down('001-create-users.js', function(e,r){});
+>   down : migrations/001-create-users.js
+  migration : complete
+```
+
+This means 'rollback all migrations including 001-create-users.js'
+
+## Usage - the orm_migrations table
+
+Migrate-orm2 maintains an internal orm_migrations table which allows it to run from previous state.
+
+The table contains a list of migrations applied to the database. By comparing these and the migration files, we can decide on which migrations to run.
 
 ```
 mysql> select * from orm_migrations;
-+---------------------+-----------+--------------------------+
-| migration           | direction | created_at               |
-+---------------------+-----------+--------------------------+
-| 001-create-users.js | up        | 2013-12-15T23:07:09.911Z |
-| 001-create-users.js | up        | 2013-12-15T23:09:01.263Z |
-| 001-create-users.js | down      | 2013-12-15T23:10:04.023Z |
-+---------------------+-----------+--------------------------+
-3 rows in set (0.00 sec)
++---------------------+
+| migration           |
++---------------------+
+| 001-create-users.js |
++---------------------+
+1 rows in set (0.00 sec)
 ```
-
-This reflects the history above.
 
 ## Usage - opts
 
@@ -274,6 +281,7 @@ We will ask for test coverage of Pull Requests for most issues. Please see the c
 * benkitzelman
 * sidorares
 * wolfeidau
+* damsonn
 
 This work is a melding of two underlying libraries:
 
