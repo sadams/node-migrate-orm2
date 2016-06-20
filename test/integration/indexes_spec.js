@@ -21,11 +21,11 @@ describe('node-migrate-orm2', function (done) {
 
   beforeEach(function(done){
     task = new Task(conn, { dir: 'migrations' });
-    helpers.cleanupDir('migrations', done);
+    helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
   });
 
   afterEach(function (done) {
-    helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
+    helpers.cleanupDir('migrations', done);
   });
 
   describe('#addIndex', function() {
@@ -123,6 +123,5 @@ this.addIndex('name_idx', {                                    \n\
 }, next);                                                      \n\
 };                                                             \n\
 exports.down = function(next){                                 \n\
-  console.log('running the down') \n\
   this.dropIndex('name_idx', 'table1', next);                  \n\
 };";

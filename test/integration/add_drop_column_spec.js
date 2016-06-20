@@ -19,14 +19,13 @@ describe('add/drop column dsl', function (done) {
     conn.close(done);
   });
 
-  //ensure the migration folder is cleared before each test
   beforeEach(function(done){
     task = new Task(conn, { dir: 'migrations' });
-    helpers.cleanupDir('migrations', done);
+    helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
   });
 
   afterEach(function (done) {
-    helpers.cleanupDbAndDir(conn, task.dir, ['table1'], done);
+    helpers.cleanupDir('migrations', done);
   });
 
   beforeEach(function(done){

@@ -1,3 +1,9 @@
+### v2.0.0
+- Migrate to new `orm_migrations` table format
+- Add `Task.ensureMigrationsTable` to allow a manual migration to v2
+- Fix rollback issues
+- `down` default behaviour is to rollback the last migration ( use to rollback every migrations )
+
 ### v1.2.14
 - Add custom types support
 

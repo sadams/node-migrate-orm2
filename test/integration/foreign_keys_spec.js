@@ -22,11 +22,11 @@ describe('foreign key DSL', function (done) {
 
   beforeEach(function(done){
     task = new Task(conn, { dir: 'migrations' });
-    helpers.cleanupDir('migrations', done);
+    helpers.cleanupDbAndDir(conn, task.dir, ['table2', 'table1'], done);
   });
 
   afterEach(function (done) {
-    helpers.cleanupDbAndDir(conn, task.dir, ['table2', 'table1'], done);
+    helpers.cleanupDir('migrations', done);
   });
 
   describe('foreign keys', function(done){
@@ -45,10 +45,9 @@ describe('foreign key DSL', function (done) {
     it('adding one', function(done){
       task.up('001-create-table1.js', function (err, result) {
         should.not.exist(err);
-
-        task.up('/002-create-table2.js', function (err, result) {
+        task.up('002-create-table2.js', function (err, result) {
           should.not.exist(err);
-          task.up('/003-add-foreign-key.js', function (err, result) {
+          task.up('003-add-foreign-key.js', function (err, result) {
             should.not.exist(err);
             if (conn.config.protocol === "postgresql"){
               conn.execQuery(pgListForeignKeys('table2'), function (err, result) {
@@ -79,11 +78,11 @@ describe('foreign key DSL', function (done) {
     it('dropping one', function(done){
       task.up('001-create-table1.js', function (err, result) {
         should.not.exist(err);
-        task.up('/002-create-table2.js', function (err, result) {
+        task.up('002-create-table2.js', function (err, result) {
           should.not.exist(err);
-          task.up('/003-add-foreign-key.js', function (err, result) {
+          task.up('003-add-foreign-key.js', function (err, result) {
             should.not.exist(err);
-            task.down('/003-add-foreign-key.js', function (err, result) {
+            task.down(function (err, result) {
               should.not.exist(err);
               if (conn.config.protocol === 'postgresql'){
                 conn.execQuery(pgListForeignKeys('table1'), function (err, result) {

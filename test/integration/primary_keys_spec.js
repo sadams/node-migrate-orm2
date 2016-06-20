@@ -21,11 +21,11 @@ describe('node-migrate-orm2- primary key DSL', function (done) {
 
   beforeEach(function(done){
     task = new Task(conn, { dir: 'migrations' });
-    helpers.cleanupDir('migrations', done);
+    helpers.cleanupDbAndDir(conn, task.dir, ['table_primary_keys'], done);
   });
 
   afterEach(function (done) {
-    helpers.cleanupDbAndDir(conn, task.dir, ['table_primary_keys'], done);
+    helpers.cleanupDir('migrations', done);
   });
 
   describe('adding a primary key', function(done){
