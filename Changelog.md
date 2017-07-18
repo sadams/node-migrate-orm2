@@ -1,3 +1,6 @@
+### v2.0.1
+- Correctly load `sql-ddl-sync` dialect - fixes for npm 5
+
 ### v2.0.0
 - Migrate to new `orm_migrations` table format
 - Add `Task.ensureMigrationsTable` to allow a manual migration to v2
