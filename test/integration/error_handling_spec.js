@@ -46,6 +46,21 @@ describe('handling errors doing migration runs', function (done) {
       });
     });
   });
+  
+  describe('if connection lost', function() {
+    it("should callback with error", function (done) {
+      conn.close(function() {
+        task.up(function (err, result) {
+          should.exist(err);
+          helpers.connect(function (err, connection) {
+            if (err) return done(err);
+            conn = connection;
+            done();
+          });
+        });
+      });
+    });
+  });
 });
 
 var table1Migration = "exports.up = function (next) {          \n\
