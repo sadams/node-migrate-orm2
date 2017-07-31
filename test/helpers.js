@@ -71,7 +71,7 @@ module.exports = {
 
     orm.connect(config[protocol], function (err, connection) {
       if (err) return cb(err);
-      cb(null, connection.driver);
+      cb(null, connection.driver, config[protocol]);
     });
   },
 

@@ -11,6 +11,11 @@ describe('Migrator', function() {
   var task;
   var conn;
   var cwd;
+  var conf;
+  var INFORMATION_SCHEMA_DB_COL = {
+    postgresql: 'table_catalog',
+    mysql: 'table_schema'
+  }
 
   var SELECT_MIGRATIONS = 'SELECT * FROM orm_migrations';
   var hasMigrations = function(count, cb) {
@@ -22,7 +27,8 @@ describe('Migrator', function() {
   };
   var SELECT_COLUMN = 'SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = ? AND column_name = ?';
   var hasColumn = function(table, column, cb) {
-    conn.execQuery(SELECT_COLUMN, [table, column], function(err, columns) {
+    var query = SELECT_COLUMN + ' AND ' + INFORMATION_SCHEMA_DB_COL[conf.protocol] + ' = ?';
+    conn.execQuery(query, [table, column, conf.database], function(err, columns) {
       should.not.exist(err);
       columns.should.have.length(1);
       cb();
@@ -30,7 +36,8 @@ describe('Migrator', function() {
   };
   var SELECT_TABLE = 'SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ?';
   var hasTable = function(table, cb) {
-    conn.execQuery(SELECT_TABLE, [table], function(err, tables) {
+    var query = SELECT_TABLE + ' AND ' + INFORMATION_SCHEMA_DB_COL[conf.protocol] + ' = ?';
+    conn.execQuery(query, [table, conf.database], function(err, tables) {
       should.not.exist(err);
       tables.should.have.length(1);
       cb();
@@ -45,9 +52,10 @@ describe('Migrator', function() {
   }
 
   before(function(done) {
-    helpers.connect(function(err, connection) {
+    helpers.connect(function(err, connection, config) {
       if (err) return done(err);
       conn = connection;
+      conf = config;
       cwd = this.process.cwd();
       done();
     });
